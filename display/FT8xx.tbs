@@ -1,0 +1,410 @@
+include "spi/spi.tbh"
+include "FT8xx.tbh"
+
+'dim displaySSPIPort as byte
+
+#define USE_SSI 1
+
+sub delay_ms( delay as word ) 
+	delay = delay * 44
+	while delay
+		delay = delay - 1
+	wend
+end sub
+
+function FT813_init() as word
+    dim ramDisplayList as dword
+
+	dim FT81x_GPIO_DAT as word                      ' Used for GPIO registers
+    dim FT81x_GPIO_DIR as word
+    dim dumb as byte
+	
+    dumb = 0
+	ramDisplayList = RAM_DL            				' Set beginning of display list memory
+	
+	init_SPI()
+
+	io.lineset(SPI_PD,LOW)                 			' PD low to reset device                                                                
+    delay_ms(50)
+    io.lineset(SPI_PD,HIGH)            				' PD high again
+    delay_ms(10)
+    ' ---------------------- Delay to allow FT81x start-up --------------------    
+                
+    EVE_CmdWrite(&h00, &h00)               			' Sends 00 00 00 to wake FT8xx
+    
+    delay_ms(500)                                  	' 500ms delay (EVE requires at least 300ms here))
+        
+    ' --------------- Check that FT8xx ready and SPI comms OK ----------------- 
+      
+    do while(EVE_MemRead8(REG_CPURESET) = &h00)   	' Ensure CPUreset register reads 0 and so FT8xx is ready   
+	loop 
+
+	' ---------------- Configure the GPIO and PWM  --------------------
+    
+    EVE_MemWrite8(REG_PWM_DUTY, 0)                 	' Backlight off
+   
+    FT81x_GPIO_DAT = EVE_MemRead16(REG_GPIOX)      	' Read the FT81x GPIO register for a read/modify/write operation
+    FT81x_GPIO_DAT = FT81x_GPIO_DAT or &h8000       	' set bit 15 of GPIO register (DISP). If using audio, also enable the amplifier shutdown GPIO line here
+    EVE_MemWrite16(REG_GPIOX, FT81x_GPIO_DAT)      	' Enable the DISP signal to the LCD panel
+
+    FT81x_GPIO_DIR = EVE_MemRead16(REG_GPIOX_DIR)  	' Read the FT81x GPIO DIR register for a read/modify/write operation
+    FT81x_GPIO_DIR = FT81x_GPIO_DIR or &h8000       	' DISP is output, if using audio, also set the associated shutdown line as output (check your Eval module schematic))
+    EVE_MemWrite16(REG_GPIOX_DIR, FT81x_GPIO_DIR)  	' Enable the DISP signal to the LCD panel
+        
+    ' ------------------------- Display settings ------------------------------
+       
+    EVE_MemWrite16(REG_HSIZE,   800)   
+    EVE_MemWrite16(REG_HCYCLE,  928)   
+    EVE_MemWrite16(REG_HOFFSET, 88)   
+    EVE_MemWrite16(REG_HSYNC0,  0)   
+    EVE_MemWrite16(REG_HSYNC1,  48)   
+    EVE_MemWrite16(REG_VSIZE,   480)   
+    EVE_MemWrite16(REG_VCYCLE,  525)   
+    EVE_MemWrite16(REG_VOFFSET, 32)   
+    EVE_MemWrite16(REG_VSYNC0,  0)   
+    EVE_MemWrite16(REG_VSYNC1,  3)   
+    EVE_MemWrite8(REG_SWIZZLE,  0)   
+    EVE_MemWrite8(REG_PCLK_POL, 1)
+    
+    ' ---------------------- Touch and Audio settings -------------------------
+
+    EVE_MemWrite16(REG_TOUCH_RZTHRESH, 1200)       	' Eliminate any false touches
+
+    ' ---------------------- Create an initial screen before we enable the display -------------------------
+
+    ramDisplayList = RAM_DL                        	' start of Display List
+    EVE_MemWrite32(RAM_DL, &h02CCCCCC)				' Clear Color RGB sets the colour to clear screen to
+
+    ramDisplayList = ramDisplayList + 4            	' point to next location
+    EVE_MemWrite32(ramDisplayList, &h26000007)		' Clear 00100110 -------- -------- -----CST  (C/S/T define which parameters to clear)
+
+    ramDisplayList = ramDisplayList + 4            	' point to next location
+    EVE_MemWrite32(ramDisplayList, &h00000000)	  	' DISPLAY command 00000000 00000000 00000000 00000000 (end of display list)
+
+    EVE_MemWrite32(REG_DLSWAP, &h00000002)			' Swap display list to make the edited one active
+
+    EVE_MemWrite8(REG_PCLK, 2)
+	
+	delay_ms(20)
+
+	readWriteSPI( &h00 )
+	
+	EVE_MemWrite8(REG_PWM_DUTY, 127)
+	FT813_init = 8
+end function
+
+sub displaySPISelect()
+	#if CS_ENABLED
+	io.lineset(SPI_CS, LOW)
+	#endif
+end sub
+
+sub displaySPIDeselect()
+	#if CS_ENABLED
+	io.lineset(SPI_CS, HIGH)
+	#endif
+end sub
+
+' ############### INDIVIDUAL ADDRESSING AND DATA FUNCTIONS ####################
+' This section has separate calls for addressing and data phases of the transaction which allows for burst writes and reads.
+' ------------------ Send FT81x register address for writing ------------------
+sub EVE_AddrForWr(ftAddress as dword)
+    readWriteSPI( ( ( ftAddress and &h00FF0000 ) shr 16 ) + MEM_WRITE	)
+    readWriteSPI( (   ftAddress and &h0000FF00 ) shr  8				)
+    readWriteSPI(     ftAddress and &h000000FF						)
+end sub
+
+' ------------------ Send FT81x register address for reading ------------------
+sub EVE_AddrForRd(ftAddress as dword)
+    readWriteSPI( ( ( ftAddress and &h00FF0000 ) shr 16 ) + MEM_READ	)
+    readWriteSPI( (   ftAddress and &h0000FF00 ) shr  8				)
+    readWriteSPI(     ftAddress and &h000000FF						)
+    readWriteSPI( 				  &h00000000						)
+end sub
+' ------------------------ Send a 32-bit data value --------------------------
+sub EVE_Write32(ftData32 as dword)
+    readWriteSPI(   ftData32 and &h000000FF )
+    readWriteSPI( ( ftData32 and &h0000FF00 ) shr  8 )
+    readWriteSPI( ( ftData32 and &h00FF0000 ) shr 16 )
+    readWriteSPI( ( ftData32 and &hFF000000 ) shr 24 )
+end sub
+
+' ------------------------ Send a 16-bit data value --------------------------
+sub EVE_Write16(ftData16 as word)
+    readWriteSPI(   ftData16 and &h00FF )
+    readWriteSPI( ( ftData16 and &hFF00 ) shr  8 )
+end sub
+
+' ------------------------ Send an 8-bit data value ---------------------------
+sub EVE_Write8(ftData8 as byte)
+    readWriteSPI( ftData8 )
+end sub
+' ------------------------ Read a 32-bit data value via spi --------------------------
+function EVE_Read32 as dword
+    dim ftData32   as dword
+	ftData32   = 0
+	ftData32   = ftData32 or ( ( readWriteSPI(&h00) shl  0 ) and &h000000FF )
+    ftData32   = ftData32 or ( ( readWriteSPI(&h00) shl  8 ) and &h0000FF00 )
+    ftData32   = ftData32 or ( ( readWriteSPI(&h00) shl 16 ) and &h00FF0000 )
+	EVE_Read32 = ftData32 or ( ( readWriteSPI(&h00) shl 24 ) and &hFF000000 )
+end function
+
+
+' ------------------------ Read a 16-bit data value via spi  ---------------------------
+function EVE_Read16 as word
+    dim ftData16 as word
+    ftData16   = 0
+    ftData16   = ftData16 or ( ( readWriteSPI(&h00) shl 0 ) and &h00FF)
+	EVE_Read16 = ftData16 or ( ( readWriteSPI(&h00) shl 8 ) and &hFF00)
+end function
+
+' ------------------------ Read an 8-bit data value ---------------------------
+function EVE_Read8 as byte
+    EVE_Read8 = readWriteSPI(&h00)
+end function
+
+
+
+' ################# COMBINED ADDRESSING AND DATA FUNCTIONS ####################
+
+' This section has combined calls which carry out a full write or read cycle including chip select, address, and data transfer.
+' This would often be used for register writes and reads. 
+
+' -------------- Write a 32-bit value to specified address --------------------
+sub EVE_MemWrite32( ftAddress as dword, ftData32 as dword)
+	displaySPISelect()
+	EVE_AddrForWr(ftAddress)
+    EVE_Write32(ftData32)
+    displaySPIDeselect()
+end sub
+
+' -------------- Write a 16-bit value to specified address --------------------
+sub EVE_MemWrite16( ftAddress as dword, ftData16 as word)
+	displaySPISelect()
+    EVE_AddrForWr(ftAddress)
+    EVE_Write16(ftData16)
+    displaySPIDeselect()
+end sub
+
+' -------------- Write an 8-bit value to specified address --------------------
+sub EVE_MemWrite8( ftAddress as dword, ftData8 as byte)
+	displaySPISelect()
+    EVE_AddrForWr(ftAddress)
+    EVE_Write8(ftData8)
+    displaySPIDeselect()
+end sub
+
+
+
+' -------------- Read a 32-bit value from specified address --------------------
+function EVE_MemRead32(ftAddress as dword) as dword
+	displaySPISelect()
+    EVE_AddrForRd(ftAddress)
+    EVE_MemRead32 = EVE_Read32()
+    displaySPIDeselect()
+end function
+
+' -------------- Read a 16-bit value from specified address --------------------
+function EVE_MemRead16(ftAddress as dword) as word
+	displaySPISelect()
+    EVE_AddrForRd(ftAddress)
+    EVE_MemRead16 = EVE_Read16()
+    displaySPIDeselect()
+end function
+
+' -------------- Read an 8-bit value from specified address --------------------
+function EVE_MemRead8(ftAddress as dword) as byte
+	displaySPISelect()
+	EVE_AddrForRd(ftAddress)
+    EVE_MemRead8 = EVE_Read8()
+    displaySPIDeselect()
+end function
+
+' ############################# HOST COMMANDS #################################
+
+' -------------------------- Write a host command -----------------------------
+sub EVE_CmdWrite(EVECmd as byte, Param as byte)
+	dim ftData8 as byte
+	displaySPISelect()
+	
+	ftData8 = EVECmd
+    readWriteSPI( ftData8)
+	ftData8 = Param
+    readWriteSPI( ftData8)
+	ftData8 = &h00
+    readWriteSPI( ftData8)
+
+    displaySPIDeselect()
+end sub
+' ######################## SUPPORTING FUNCTIONS ###############################
+
+' --------- Increment co-processor address offset counter --------------------
+function EVE_IncCMDOffset(currentOffset as word, commandSize as word) as word
+    dim newOffset as word
+    newOffset = currentOffset + commandSize
+    if newOffset > 4095 then
+        newOffset = newOffset - 4096
+    end if
+    EVE_IncCMDOffset = newOffset
+end function
+
+' ------ Wait for co-processor read and write pointers to be equal ------------
+
+function EVE_WaitCmdFifoEmpty as word
+    dim ReadPointer, WritePointer as word
+    do while ( (WritePointer <> ReadPointer) and (ReadPointer <> &hFFF) )
+		ReadPointer = EVE_MemRead16(REG_CMD_READ)
+		WritePointer = EVE_MemRead16(REG_CMD_WRITE)
+    loop
+    if ReadPointer = &hFFF then
+        EVE_WaitCmdFifoEmpty = &hFF
+    else
+        EVE_WaitCmdFifoEmpty = WritePointer
+	end if
+end function
+
+' ------ Get current value of the FIFO write pointer REG_CMD_WRITE ------------
+
+function EVE_GetCurrentWritePointer() as word
+	EVE_GetCurrentWritePointer = EVE_MemRead32(REG_CMD_WRITE)
+end function
+' ------------ Check how much free space is available in CMD FIFO -------------
+function EVE_CheckFreeSpace(CmdOffset as word) as word
+    dim ReadPointer as dword
+    dim Fullness as word
+    ReadPointer = EVE_MemRead32(REG_CMD_READ)
+    Fullness = ( CmdOffset - ( ReadPointer and &hFFFF ) and &hFFF )
+    EVE_CheckFreeSpace = (4096 - 4) - Fullness
+end function
+
+
+
+
+
+
+' Commands function merge
+
+function tagMask(mask as byte) as dword
+	tagMask	= TAG_MASK or ( ( mask ) and &h1 )
+end function
+
+function tagWrite( s as byte ) as dword
+	dim aux as dword
+	aux = TAG
+	tagWrite = aux or s
+end function
+
+function colorRGB( color as dword ) as dword
+	color = color and &hFFFFFF
+	color = color or COLOR_RGB
+	colorRGB = color
+end function
+
+function clearColorA( alpha as byte ) as dword
+	clearColorA = CLEAR_COLOR_A or ( alpha and &hFF )
+end function
+
+function colorA( alpha as byte ) as dword
+	colorA = COLOR_A or ( alpha and &hFF )
+end function
+
+function clearColorRGB( color as dword ) as dword
+	clearColorRGB = CLEAR_COLOR_RGB or ( color and &hFFFFFF )
+end function
+
+function clear( c as byte, s as byte, t as byte ) as dword
+	clear = CLEAR or ( ( c and &h1 ) shl 2 ) or ( ( s and &h1 ) shl 1 ) or ( t and &h1 )
+end function
+
+function begin( prim as byte ) as dword
+	begin = BEGIN or ( prim and &hF )
+end function
+
+function pointSize( size as word ) as dword
+	pointSize = POINT_SIZE or ( size and &h1FFF )
+end function
+
+function lineWidth( width as word ) as dword
+	dim aux as dword
+	aux = width and &hFFF
+	aux = aux or LINE_WIDTH
+	lineWidth = aux
+end function
+
+function vertex2f( x as word, y as word ) as dword
+	dim aux as dword
+	aux = x and &h7FFF
+	aux = ( aux shl 15 ) or ( y and &h7FFF )
+	aux = VERTEX2F or aux
+	vertex2f = aux
+end function
+
+function vertex2ii( x as word, y as word, handle as byte ,cell as byte ) as dword
+	dim aux as dword
+	aux = x and &h7FFF
+	aux = ( aux shl 21 ) or ( y and &h7FFF )
+	aux = ( aux shl 12 ) or ( handle and &h7FFF )
+	aux = ( aux shl 7 ) or ( cell and &h7FFF )
+	aux = VERTEX2II or aux
+	vertex2ii = aux
+end function
+
+function bitmapHandle( handle as byte ) as dword
+	bitmapHandle = BITMAP_HANDLE or ( handle and &h1F )
+end function
+
+function bitmapSource( addr as dword ) as dword
+	bitmapSource = BITMAP_SOURCE or ( addr and &h3FFFFF )
+end function
+
+function bitmapLayout( format as byte, linestride as word, height as word ) as dword
+	bitmapLayout = BITMAP_LAYOUT or ( ( format and &h1F ) shl 19 ) or ( ( linestride and &h3FF ) shl 9 ) or ( height and &h1FF )
+end function
+
+function bitmapSize( filter as byte, wrapx as byte, wrapy as byte, width as word, height as word ) as dword
+	dim aux as dword
+	aux = filter and &h1
+	aux = ( aux shl 20 ) or ( wrapx  and &h001 )
+	aux = ( aux shl 19 ) or ( wrapy  and &h001 )
+	aux = ( aux shl 18 ) or ( width  and &h1FF )
+	aux = ( aux shl 09 ) or ( height and &h1FF )
+	aux = BITMAP_SIZE or aux
+	bitmapSize = aux
+end function
+
+function bitmapLayoutH( linestride as byte, height as byte ) as dword
+	bitmapLayoutH = BITMAP_LAYOUT_H or ( ( linestride and &H3 ) shl 2 ) or ( height and &H3 )
+end function
+
+function bitmapSizeH( width as byte, height as byte ) as dword
+	bitmapSizeH = BITMAP_SIZE_H or ( ( width and &H3 ) shl 2 ) or ( height and &H3 )
+end function
+
+function bitmapTransformA( a as dword ) as dword
+	bitmapTransformA = BITMAP_TRANSFORM_A or ( a and &h1FFFF )
+end function
+
+function bitmapTransformE( e as dword ) as dword
+	bitmapTransformE = BITMAP_TRANSFORM_E or ( e and &h1FFFF )
+end function
+
+function scissorXY( x as word, y as word ) as dword
+	dim aux as dword
+	aux = x and &h7FF
+	aux = ( aux shl 11 ) or ( y and &h7FF )
+	aux = SCISSOR_XY or aux
+	scissorXY = aux
+end function
+
+function scissorSize( width as word, height as word ) as dword
+	dim aux as dword
+	aux = width and &h1FFF
+	aux = ( aux shl 12 ) or ( height and &h1FFF )
+	aux = SCISSOR_SIZE or aux
+	scissorSize = aux
+end function
+
+
+
+
+

@@ -1,0 +1,232 @@
+#ifndef __FT8xx__
+#define __FT8xx__
+
+#define MEM_WRITE 				&h80
+#define MEM_READ 				&h00
+
+#define RAM_G 					&h000000
+#define RAM_G_END				&h0FFFFF
+#define ROM_FONT	 			&h1E0000
+#define ROM_FONT_END 			&h2FFFFB
+#define ROM_FONT_ADDR 			&h2FFFFC
+#define ROM_FONT_ADDR_END		&h2FFFFF
+#define RAM_DL 					&h300000
+#define RAM_DL_END				&h301FFF
+#define RAM_REG 				&h302000
+#define RAM_REG_END				&h302FFF
+#define RAM_CMD 				&h308000
+#define RAM_CMD_END				&h308FFF
+
+#define REG_ID                	&h302000
+#define REG_FRAMES            	&h302004
+#define REG_CLOCK             	&h302008
+#define REG_FREQUENCY         	&h30200C
+#define REG_RENDERMODE        	&h302010
+#define REG_SNAPY             	&h302014
+#define REG_SNAPSHOT          	&h302018
+#define REG_SNAPFORMAT        	&h30201C
+#define REG_CPURESET          	&h302020
+#define REG_TAP_CRC           	&h302024
+#define REG_TAP_MASK          	&h302028
+#define REG_HCYCLE            	&h30202C
+#define REG_HOFFSET           	&h302030
+#define REG_HSIZE             	&h302034
+#define REG_HSYNC0            	&h302038
+#define REG_HSYNC1            	&h30203C
+#define REG_VCYCLE            	&h302040
+#define REG_VOFFSET           	&h302044
+#define REG_VSIZE             	&h302048
+#define REG_VSYNC0            	&h30204C
+#define REG_VSYNC1            	&h302050
+#define REG_DLSWAP            	&h302054
+#define REG_ROTATE            	&h302058
+#define REG_OUTBITS           	&h30205C
+#define REG_DITHER            	&h302060
+#define REG_SWIZZLE           	&h302064
+#define REG_CSPREAD           	&h302068
+#define REG_PCLK_POL          	&h30206C
+#define REG_PCLK              	&h302070
+#define REG_TAG_X             	&h302074
+#define REG_TAG_Y             	&h302078
+#define REG_TAG               	&h30207C
+#define REG_VOL_PB            	&h302080
+#define REG_VOL_SOUND         	&h302084
+#define REG_SOUND             	&h302088
+#define REG_PLAY              	&h30208C
+#define REG_GPIO_DIR          	&h302090
+#define REG_GPIO              	&h302094
+#define REG_GPIOX_DIR         	&h302098
+#define REG_GPIOX             	&h30209C
+#define REG_INT_FLAGS         	&h3020A8
+#define REG_INT_EN            	&h3020Ac
+#define REG_INT_MASK          	&h3020B0
+#define REG_PLAYBACK_START    	&h3020B4
+#define REG_PLAYBACK_LENGTH   	&h3020B8
+#define REG_PLAYBACK_READPTR  	&h3020BC
+#define REG_PLAYBACK_FREQ     	&h3020C0
+#define REG_PLAYBACK_FORMAT   	&h3020C4
+#define REG_PLAYBACK_LOOP     	&h3020C8
+#define REG_PLAYBACK_PLAY     	&h3020CC
+#define REG_PWM_HZ            	&h3020D0
+#define REG_PWM_DUTY          	&h3020D4
+#define REG_MACRO_0           	&h3020D8
+#define REG_MACRO_1           	&h3020DC
+#define REG_CMD_READ          	&h3020F8
+#define REG_CMD_WRITE         	&h3020FC
+#define REG_CMD_DL            	&h302100
+#define REG_TOUCH_MODE        	&h302104
+#define REG_TOUCH_ADC_MODE    	&h302108
+#define REG_TOUCH_CHARGE      	&h30210C
+#define REG_TOUCH_SETTLE      	&h302110
+#define REG_TOUCH_OVERSAMPLE  	&h302114
+#define REG_TOUCH_RZTHRESH    	&h302118
+#define REG_TOUCH_RAW_XY      	&h30211C
+#define REG_TOUCH_RZ          	&h302120
+#define REG_TOUCH_SCREEN_XY   	&h302124
+#define REG_TOUCH_TAG_XY      	&h302128
+#define REG_TOUCH_TAG         	&h30212C
+#define REG_TOUCH_TAG1_XY     	&h302130
+#define REG_TOUCH_TAG1        	&h302134
+#define REG_TOUCH_TAG2_XY     	&h302138
+#define REG_TOUCH_TAG2        	&h30213C
+#define REG_TOUCH_TAG3_XY     	&h302140
+#define REG_TOUCH_TAG3        	&h302144
+#define REG_TOUCH_TAG4_XY     	&h302148
+#define REG_TOUCH_TAG4        	&h30214C
+#define REG_TOUCH_TRANSFORM_A 	&h302150
+#define REG_TOUCH_TRANSFORM_B 	&h302154
+#define REG_TOUCH_TRANSFORM_C 	&h302158
+#define REG_TOUCH_TRANSFORM_D 	&h30215C
+#define REG_TOUCH_TRANSFORM_E 	&h302160
+#define REG_TOUCH_TRANSFORM_F 	&h302164
+#define REG_TOUCH_CONFIG      	&h302168
+#define REG_CTOUCH_TOUCH4_X   	&h30216C
+#define REG_BIST_EN           	&h302174
+#define REG_TRIM              	&h302180
+#define REG_ANA_COMP          	&h302184
+#define REG_SPI_WIDTH         	&h302188
+#define REG_TOUCH_DIRECT_XY   	&h30218C
+#define REG_TOUCH_DIRECT_Z1Z2 	&h302190
+#define REG_DATESTAMP         	&h302564
+#define REG_CMDB_SPACE        	&h302574
+#define REG_CMDB_WRITE        	&h302578
+#define REG_TRACKER				&h309000
+#define REG_TRACKER_1			&h309004
+#define REG_TRACKER_2			&h309008
+#define REG_TRACKER_3			&h30900C
+#define REG_TRACKER_4			&h309010
+
+'PARAMETERS AND COMMANDS-----------------------------------
+
+#define DLSWAP_FRAME			&h00000002
+#define FTPOINTS				&h00000002
+#define ARGB2					&h00000005
+#define ARGB4					&h00000006
+#define RGB565					&h00000007
+#define PALETTED				&h00000008
+#define PALETTED565				&h0000000E
+#define PALETTED4444			&h0000000F
+#define BILINEAR				&h00000001
+#define NEAREST					&h00000000
+#define BITMAPS					&h00000001
+#define BORDER					&h00000000
+#define LINE_STRIP				&h00000004
+#define RECTS					&h00000009
+
+#define CMD_DLSTART				&hFFFFFF00
+#define CMD_SWAP				&hFFFFFF01
+#define CMD_BGCOLOR				&hFFFFFF09
+#define CMD_FGCOLOR				&hFFFFFF0A
+#define CMD_GRADIENT			&hFFFFFF0B
+#define CMD_NUMBER				&hFFFFFF2e
+#define CMD_TEXT				&hFFFFFF0C
+#define CMD_BUTTON				&hFFFFFF0D
+#define CMD_TOGGLE				&hFFFFFF12
+#define CMD_KEYS				&hFFFFFF0E
+#define CMD_SLIDER				&hFFFFFF10
+#define CMD_SCROLLBAR			&hFFFFFF11
+#define CMD_SPINNER				&hFFFFFF16
+#define CMD_MEMCPY				&hFFFFFF1D
+#define CMD_APPEND				&hFFFFFF1E
+#define CMD_LOADIMAGE			&hFFFFFF24
+#define CMD_GETPROPS			&hFFFFFF25
+#define CMD_TRACK				&hFFFFFF2C
+
+#define TAG_MASK				&h14000000
+#define TAG 					&h03000000
+#define COLOR_RGB 				&h04000000
+#define CLEAR_COLOR_A			&h0F000000
+#define COLOR_A 				&h10000000
+#define CLEAR_COLOR_RGB 		&h02000000
+#define CLEAR					&h26000000
+#define DISPLAY					&h00000000
+#define BEGIN					&h1F000000
+#define POINT_SIZE				&h0D000000
+#define LINE_WIDTH				&h0E000000
+#define VERTEX2F				&h40000000
+#define VERTEX2II 				&h80000000
+#define END_LIST				&h21000000
+#define BITMAP_HANDLE 			&h05000000
+#define BITMAP_SOURCE 			&h01000000
+#define BITMAP_LAYOUT			&h07000000
+#define BITMAP_SIZE				&h08000000
+#define BITMAP_LAYOUT_H 		&h28000000
+#define BITMAP_SIZE_H			&h29000000
+#define BITMAP_TRANSFORM_A		&h15000000
+#define BITMAP_TRANSFORM_E		&h19000000
+#define SCISSOR_XY				&h1B000000
+#define SCISSOR_SIZE			&h1C000000
+
+
+
+
+
+declare function FT813_init() as word
+declare sub displaySPIDeselect()
+declare sub displaySPISelect()
+declare function EVE_WaitCmdFifoEmpty as word
+declare sub EVE_AddrForWr(ftAddress as dword)
+declare sub EVE_AddrForRd(ftAddress as dword)
+declare sub EVE_Write32(ftData32 as dword)
+declare sub EVE_Write16(ftData16 as word)
+declare sub EVE_Write8(ftData8 as byte)
+declare function EVE_Read32 as dword
+declare function EVE_Read16 as word
+declare function EVE_Read8 as byte
+declare sub EVE_MemWrite32( ftAddress as dword, ftData32 as dword)
+declare sub EVE_MemWrite16( ftAddress as dword, ftData16 as word)
+declare sub EVE_MemWrite8( ftAddress as dword, ftData8 as byte)
+declare function EVE_MemRead32(ftAddress as dword) as dword
+declare function EVE_MemRead16(ftAddress as dword) as word
+declare function EVE_MemRead8(ftAddress as dword) as byte
+declare sub EVE_CmdWrite(EVECmd as byte, Param as byte)
+declare function EVE_IncCMDOffset(currentOffset as word, commandSize as word) as word
+declare function EVE_GetCurrentWritePointer() as word
+declare function EVE_CheckFreeSpace(CmdOffset as word) as word
+
+
+
+declare function tagMask(mask as byte) as dword
+declare function tagWrite( s as byte ) as dword
+declare function colorRGB( color as dword ) as dword
+declare function clearColorA( alpha as byte ) as dword
+declare function colorA( alpha as byte ) as dword
+declare function clearColorRGB( color as dword ) as dword
+declare function clear( c as byte, s as byte, t as byte ) as dword
+declare function begin( prim as byte ) as dword
+declare function pointSize( size as word ) as dword
+declare function lineWidth( width as word ) as dword
+declare function vertex2f( x as word, y as word ) as dword
+declare function vertex2ii( x as word, y as word, handle as byte ,cell as byte ) as dword
+declare function bitmapHandle( handle as byte ) as dword
+declare function bitmapSource( addr as dword ) as dword
+declare function bitmapLayout( format as byte, linestride as word, height as word ) as dword
+declare function bitmapSize( filter as byte, wrapx as byte, wrapy as byte, width as word, height as word ) as dword
+declare function bitmapLayoutH( linestride as byte, height as byte ) as dword
+declare function bitmapSizeH( width as byte, height as byte ) as dword
+declare function bitmapTransformA( a as dword ) as dword
+declare function bitmapTransformE( e as dword ) as dword
+declare function scissorXY( x as word, y as word ) as dword
+declare function scissorSize( width as word, height as word ) as dword
+
+#endif

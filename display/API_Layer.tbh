@@ -1,0 +1,44 @@
+#ifndef __API_LAYER__
+#define __API_LAYER__
+declare sub DisplayAPI_DeleteTags ()           
+declare sub DisaplyAPI_Init()                             'ARRANCA EL DISPLAY
+declare sub DisplayAPI_FONDODEGRADE (byval color1 as dword, byval color2 as dword) 'inicializa una nueva pantalla con degrade
+declare sub DisplayAPI_FONDO (byval color as dword)        'inicializa una nueva pantalla con un color de fondo 
+declare sub DisplayAPI_EndScreen()         'siempre para cerrar la pantalla del fondo 
+declare sub DisplayAPI_NewStaticScreen ()     
+declare sub DisplayAPI_EndStaticScreen()
+declare sub DisplayAPI_StoreStaticScreen(byval destination as dword)
+declare sub DisplayAPI_DawStaticScreen(byval ptr as dword, byval offset as dword)
+declare sub DisplayAPI_WriteText(byval color as dword, byval alpha as byte, byval x as word, byval y as word, byval font as word, byval options as word, byref texto as string, byval etiqueta as byte)
+declare sub DisplayAPI_DrawRect (byval color as dword, byval alpha as byte, byval x as word, byval y as word, byval width as word, byval height as word, byval line_width as byte)
+declare sub DisplayAPI_DrawFilledRect (byval color as dword, byval alpha as byte, byval x as word, byval y as word, byval width as word, byval height as word, byval corner as byte, byval etiqueta as byte)
+declare sub DisplayAPI_Button (byval color as dword, byval alpha as byte, byval x as word, byval y as word, byval width as word, byval height as word, byval font as word, byval options as word, byref texto as string, byval etiqueta as byte)
+declare sub DisplayAPI_Keys( byval color as dword, byval x as word, byval y as word, byval width as word, byval height as word, byval font as word, byval options as word, byref texto as string)
+declare function DisplayAPI_GetTextWidth( byref texto as char, byval font as byte ) as word
+declare sub DisplayAPI_DrawTextBox ( byval color as dword, byval colort as dword, byval alpha as byte, byval x as word, byval y as word, byval width as word, byval height as word, byval corner as byte, byval font as word, byval options as word, byref texto as string, byval etiqueta as byte)
+declare sub DisplayAPI_FloatingScreen( byval x as word, byval y as word, byval width as word, byval height as word )
+declare sub DisplayAPI_CloseFloatingScreen()
+declare sub DisplayAPI_Slider( byval x as word, byval y as word, byval w as word, byval h as word, byval options as word, byval val as word, byval range as word,  etiqueta as byte)
+declare sub DisplayAPI_Scroll( byval alpha as byte, byval x as word, byval y as word, byval w as word, byval h as word, byval options as word, byval val as word, byval size as word, byval range as word,  byval etiqueta as byte)
+declare sub DisplayAPI_Spinner( byval x as word, byval y as word, byval style as word, byval scale as word)
+declare sub DisplayAPI_Coordinates ()
+declare sub DisplayAPI_Tag ()
+declare sub DisplayAPI_LoadImage( byval ptr as byte, byval options as byte)
+declare sub DisplayAPI_GetProps( byval ptr as dword, byval w as dword, byval h as dword)
+declare sub DisplayAPI_BitmapHandle( byval handle as byte)
+declare sub DisplayAPI_BitmapSource( byval addr as dword )
+declare sub DisplayAPI_BitmapLayout( byval format as byte, byval linestride as word, byval height as word)   
+declare sub API_BITMAP_SIZE( byval filter as byte, byval wrapx as byte, byval wrapy as byte, byval width as word, byval height as word)
+declare sub DisplayAPI_BitmapTransformA( byval a as dword)
+declare sub DisplayAPI_BitmapTransformE( byval e as dword )
+declare sub API_BITMAP_LAYOUT_H( byval linestride as byte, byval height as byte)
+declare sub DisplayAPI_BitmapHSize( byval width as byte, byval height as byte)
+declare sub DisplayAPI_Track( byval x as word, byval y as word, byval w as word, byval h as word, byval etiqueta as word )
+declare sub DisplayAPI_Gradient( byval x0 as word, byval y0 as word, byval rgb0 as dword, byval x1 as word, byval y1 as word, byval rgb1 as dword)
+declare sub DisplayAPI_WriteNumber(byval color as dword, byval alpha as byte, byval x as word, byval y as word, byval font as word, byval options as word, byval numero as word, byval etiqueta as byte)
+declare sub DisplayAPI_Toggle (byval color as dword, byval alpha as byte, byval x as word, byval y as word, byval width as word, byval font as word, byval options as word, byval state as word, byref texto as string, byval etiqueta as byte)
+declare sub DisplayAPI_DrawNumberBox ( byval color as dword, byval colort as dword, byval alpha as byte, byval x as word, byval y as word, byval width as word, byval height as word, byval corner as byte, byval font as word, byval options as word, byval numero as word, byval etiqueta as byte)
+declare function displayAPI_ReadTag as byte
+declare function displayAPI_ReadYScroll as dword
+
+#endif

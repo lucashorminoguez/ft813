@@ -1,0 +1,19 @@
+#ifndef __SPI__
+#define __SPI__
+
+'SPI-----------------------------------------------------------------
+
+'DEFINES-------------------------------------------------------------
+#define SPI_CLK		PL_IO_NUM_49
+#define SPI_MISO	PL_IO_NUM_50
+#define SPI_MOSI	PL_IO_NUM_51
+#define SPI_CS		PL_IO_NUM_52
+#define SPI_PD		PL_IO_NUM_53
+#define CS_ENABLED 1
+
+'FUNCIONES PROTOTIPOS------------------------------------------------
+
+declare function readWriteSPI ( dato as byte ) as byte
+declare sub init_SPI()
+
+#endif

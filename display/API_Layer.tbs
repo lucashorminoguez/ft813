@@ -1,0 +1,661 @@
+include "Display\FT8xx.tbh"
+
+'cosas mias
+dim imgAddress as dword
+
+declare function DisplayAPI_SendString(byref texto as string) as byte
+
+'fin de cosas mias
+
+dim cmdOffset as word
+dim touch as byte
+dim tagEnabled as no_yes = YES
+
+sub DisaplyAPI_Init()
+	FT813_init()
+	cmdOffset = 0
+end sub
+
+function displayAPI_ReadTag as byte
+	displayAPI_ReadTag = EVE_MemRead8(REG_TOUCH_TAG)
+end function
+
+function displayAPI_ReadYScroll as dword
+	displayAPI_ReadYScroll = EVE_MemRead32(REG_TRACKER)
+end function
+
+sub DisplayAPI_DisableTags()
+	tagEnabled = NO
+end sub
+
+sub DisplayAPI_EnableTags()
+	tagEnabled = YES
+end sub
+
+sub DisplayAPI_DeleteTags ()
+    EVE_Write32( &h120000FF )										' CLEAR
+    cmdOffset = EVE_IncCMDOffset( cmdOffset, 4)
+end sub
+
+'SUBRUTINA PARA EL FONDO DE PANTALLA CON DEGRADE HORIZONTAL (INTENTO DE DIAGONAL)
+sub DisplayAPI_FONDODEGRADE(byval colorStart as dword, byval colorEnd as dword)
+    dim SCREEN_WIDTH as dword
+    dim SCREEN_HEIGHT as dword
+    SCREEN_WIDTH = 12800
+    SCREEN_HEIGHT = 7680
+    dim steps as dword
+    steps = 50  ' Número de pasos del gradiente
+    
+    dim i as dword
+    dim rStart, gStart, bStart as dword
+    dim rEnd, gEnd, bEnd as dword
+    dim rStep, gStep, bStep as float
+    dim rCurrent, gCurrent, bCurrent as dword
+    
+    ' Extraer componentes RGB de los colores inicial y final
+    rStart = (colorStart / &h10000) mod &h100
+    gStart = (colorStart / &h100) mod &h100
+    bStart = colorStart mod &h100
+    
+    rEnd = (colorEnd / &h10000) mod &h100
+    gEnd = (colorEnd / &h100) mod &h100
+    bEnd = colorEnd mod &h100
+    
+    ' Calcular los incrementos por paso
+    rStep = (rEnd - rStart) / steps
+    gStep = (gEnd - gStart) / steps
+    bStep = (bEnd - bStart) / steps
+    
+    ' Dibujar cada paso del gradiente
+    EVE_WaitCmdFifoEmpty()
+    displaySPISelect()
+    EVE_AddrForWr( RAM_CMD + cmdOffset )
+    
+    EVE_Write32( CMD_DLSTART )
+    cmdOffset = EVE_IncCMDOffset( cmdOffset, 4)
+    
+    for i = 0 to steps
+        ' Calcular color actual
+        rCurrent = rStart + rStep * i
+        gCurrent = gStart + gStep * i
+        bCurrent = bStart + bStep * i
+        
+        ' Dibujar rectángulo del paso actual
+        EVE_Write32( colorRGB( (rCurrent * &h10000) or (gCurrent * &h100) or bCurrent ) )
+        cmdOffset = EVE_IncCMDOffset( cmdOffset, 4)
+        EVE_Write32( begin( RECTS ) )
+        cmdOffset = EVE_IncCMDOffset( cmdOffset, 4)
+        
+        ' Coordenadas ajustadas para un degradado diagonal
+        EVE_Write32( vertex2f( i * (SCREEN_WIDTH / steps), 0 ) )                          ' Esquina superior izquierda
+        cmdOffset = EVE_IncCMDOffset( cmdOffset, 4)
+        EVE_Write32( vertex2f( (i + 1) * (SCREEN_WIDTH / steps), SCREEN_HEIGHT ) )        ' Esquina inferior derecha
+        cmdOffset = EVE_IncCMDOffset( cmdOffset, 4)
+    next i
+    
+    ' Finalizar Display List
+    EVE_Write32( CMD_SWAP )
+    cmdOffset = EVE_IncCMDOffset( cmdOffset, 4)
+end sub
+
+''SUBRUTINA DEL DEGRADE PARA EL FONDO 
+
+'sub DisplayAPI_NewScreen (byval colorStart as dword, byval colorEnd as dword)
+ '   dim SCREEN_WIDTH as dword
+  '  dim SCREEN_HEIGHT as dword
+   ' SCREEN_WIDTH = 12800
+    'SCREEN_HEIGHT = 7680
+'    dim steps as dword
+ '   steps = 50  ' Número de pasos del gradiente
+  '  
+   ' dim i as dword
+    'dim rStart, gStart, bStart as dword
+   ' dim rEnd, gEnd, bEnd as dword
+   ' dim rStep, gStep, bStep as float
+   ' dim rCurrent, gCurrent, bCurrent as dword
+    
+    ' Extraer componentes RGB de los colores inicial y final
+    'rStart = (colorStart / &h10000) mod &h100
+    'gStart = (colorStart / &h100) mod &h100
+    'bStart = colorStart mod &h100
+    
+    'rEnd = (colorEnd / &h10000) mod &h100
+    'gEnd = (colorEnd / &h100) mod &h100
+    'bEnd = colorEnd mod &h100
+    
+    ' Calcular los incrementos por paso
+    'rStep = (rEnd - rStart) / steps
+    'gStep = (gEnd - gStart) / steps
+    'bStep = (bEnd - bStart) / steps
+    
+    ' Dibujar cada paso del gradiente
+    'EVE_WaitCmdFifoEmpty()
+    'displaySPISelect()
+   ' EVE_AddrForWr( RAM_CMD + cmdOffset )
+    
+    'EVE_Write32( CMD_DLSTART )
+    'cmdOffset = EVE_IncCMDOffset( cmdOffset, 4)
+    
+    'for i = 0 to steps
+        ' Calcular color actual
+     '   rCurrent = rStart + rStep * i
+      '  gCurrent = gStart + gStep * i
+       ' bCurrent = bStart + bStep * i
+        
+        ' Dibujar rectángulo del paso actual
+        'EVE_Write32( colorRGB( (rCurrent * &h10000) or (gCurrent * &h100) or bCurrent ) )
+        'cmdOffset = EVE_IncCMDOffset( cmdOffset, 4)
+        'EVE_Write32( begin( RECTS ) )
+        'cmdOffset = EVE_IncCMDOffset( cmdOffset, 4)
+        'EVE_Write32( vertex2f( 0, i * (SCREEN_HEIGHT / steps) ) )
+     '   cmdOffset = EVE_IncCMDOffset( cmdOffset, 4)
+    '    EVE_Write32( vertex2f( SCREEN_WIDTH, (i + 1) * (SCREEN_HEIGHT / steps) ) )
+   '     cmdOffset = EVE_IncCMDOffset( cmdOffset, 4)
+  '  next i
+    
+     'Finalizar Display List
+ '   EVE_Write32( CMD_SWAP )
+    'cmdOffset = EVE_IncCMDOffset( cmdOffset, 4)
+'end sub
+
+'ESTO ERA PARA UN SOLO FONDO DE PANTALLA QUE HIZO JULI 
+sub DisplayAPI_FONDO (byval color as dword)
+    EVE_WaitCmdFifoEmpty()												' Await completion of processing 
+    displaySPISelect()													' CS low begins SPI transaction 
+    EVE_AddrForWr( RAM_CMD + cmdOffset )								' Send address for writing as the next free location in the co-pro buffer
+    
+	EVE_Write32( CMD_DLSTART )											' CMD_DLSTART
+    cmdOffset = EVE_IncCMDOffset( cmdOffset, 4) 
+    EVE_Write32( clearColorRGB( color ) )								' clearColorRGB
+    cmdOffset = EVE_IncCMDOffset( cmdOffset, 4)
+    EVE_Write32( clear( 1, 1, 1 ) )										' CLEAR
+    cmdOffset = EVE_IncCMDOffset( cmdOffset, 4)
+end sub
+
+sub DisplayAPI_EndScreen()
+    EVE_Write32( DISPLAY )												' Display
+    cmdOffset = EVE_IncCMDOffset( cmdOffset, 4)
+    EVE_Write32( CMD_SWAP )												' SWAP
+    cmdOffset = EVE_IncCMDOffset( cmdOffset, 4)
+    '-------------------------------------- EndCoProList ------------------------------------
+    displaySPIDeselect()                       							' Chip Select high concludes burst    
+    EVE_MemWrite32( REG_CMD_WRITE, cmdOffset )							' Update the ring buffer pointer
+    EVE_WaitCmdFifoEmpty()												' Await completion of processing 
+end sub
+
+sub DisplayAPI_NewStaticScreen ()
+    '-------------------------------------- BeginCoProList -----------------------------------
+    EVE_WaitCmdFifoEmpty()												' Await completion of processing 
+    displaySPISelect()													' CS low begins SPI transaction 
+    EVE_AddrForWr( RAM_CMD + cmdOffset)									' Send address for writing as the next free location in the co-pro buffer
+    EVE_Write32( CMD_DLSTART )											' CMD_DLSTART
+    cmdOffset = EVE_IncCMDOffset( cmdOffset, 4)
+end sub
+
+sub DisplayAPI_EndStaticScreen()
+    '-------------------------------------- EndCoProList ------------------------------------
+    displaySPIDeselect()                       							' Chip Select high concludes burst
+    EVE_MemWrite32(REG_CMD_WRITE, (cmdOffset) )							' Update the ring buffer pointer
+    EVE_WaitCmdFifoEmpty()												' Await completion of processing 
+end sub
+
+sub DisplayAPI_StoreStaticScreen(byval destination as dword)
+	dim dlOffset as dword
+    dlOffset = EVE_MemRead32( REG_CMD_DL )
+    '-------------------------------------- BeginCoProList -----------------------------------
+    EVE_WaitCmdFifoEmpty()												' ESPERA A QUE EL PROCESO ESTE COMPLETO  
+    displaySPIDeselect()                       							' Chip Select high concludes burst
+    EVE_AddrForWr( RAM_CMD + cmdOffset )								' ENVIA address PARA ESCRIBIR EN LA PROXIMA LOCACION LIBRE EN EL co-pro buffer
+    
+    EVE_Write32( CMD_MEMCPY )											' CMD_MEMCPY
+    EVE_Write32( destination )
+    EVE_Write32( RAM_DL )
+    EVE_Write32( dlOffset )
+    cmdOffset = EVE_IncCMDOffset(cmdOffset, 16)
+    displaySPIDeselect()                       							' Chip Select high concludes burst
+    EVE_MemWrite32(REG_CMD_WRITE, (cmdOffset) )							' Update the ring buffer pointer
+    EVE_WaitCmdFifoEmpty()												' Await completion of processing
+end sub
+sub DisplayAPI_DawStaticScreen(byval ptr as dword, byval offset as dword)
+    EVE_Write32( CMD_APPEND )
+    EVE_Write32( ptr )
+    EVE_Write32( offset )
+    cmdOffset = EVE_IncCMDOffset( cmdOffset, 12)
+end sub
+sub DisplayAPI_WriteText(byval color as dword, byval alpha as byte, byval x as word, byval y as word, byval font as word, byval options as word, byref texto as string, byval etiqueta as byte)
+    dim command_size as dword
+    dim aux as dword
+    command_size = 0
+    
+    if etiqueta <> 0 and tagEnabled = YES then												' tagMask
+        EVE_Write32( TAG_MASK + 1 )										' Enable tagging
+        cmdOffset = EVE_IncCMDOffset( cmdOffset, 4)
+        EVE_Write32( tagWrite( etiqueta ) )								' tagWrite
+        cmdOffset = EVE_IncCMDOffset( cmdOffset, 4)
+    end if
+    
+    EVE_Write32( ColorRGB( color ) )					' clearColorRGB
+    EVE_Write32( colorA(alpha))											' colorA
+
+	EVE_Write32( CMD_TEXT )												' CMD_TEXT
+    EVE_Write16( x and &hffff )
+    EVE_Write16( y and &hffff )
+    EVE_Write16( font and &hffff )
+    EVE_Write16( options and &hffff )
+
+	command_size = (20 + DisplayAPI_SendString(texto))
+
+    cmdOffset = EVE_IncCMDOffset( cmdOffset, command_size )
+    if etiqueta <> 0 and tagEnabled = YES then												' tagMask:
+        EVE_Write32(  TAG_MASK )										'  Disable tagging
+        cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
+    end if
+end sub
+
+sub DisplayAPI_WriteNumber(byval color as dword, byval alpha as byte, byval x as word, byval y as word, byval font as word, byval options as word, byval numero as word, byval etiqueta as byte)
+    dim command_size as dword
+    dim aux as dword
+    command_size = 0
+    
+    if etiqueta <> 0 and tagEnabled = YES then												' tagMask
+        EVE_Write32( TAG_MASK + 1 )										' Enable tagging
+        cmdOffset = EVE_IncCMDOffset( cmdOffset, 4)
+        EVE_Write32( tagWrite( etiqueta ) )								' tagWrite
+        cmdOffset = EVE_IncCMDOffset( cmdOffset, 4)
+    end if
+    
+    EVE_Write32( ColorRGB( color ) )					' clearColorRGB
+    cmdOffset = EVE_IncCMDOffset( cmdOffset, 4)
+    EVE_Write32( colorA(alpha))											' colorA
+    cmdOffset = EVE_IncCMDOffset( cmdOffset, 4)
+
+	EVE_Write32( CMD_NUMBER )												' CMD_TEXT
+	aux = ( y and &hffff)
+	aux = ( aux shl 16) or ( x and &hffff)
+    EVE_Write32( aux )
+	aux = ( options and &hffff)
+	aux = ( aux shl 16) or ( font and &hffff)
+    EVE_Write32( aux )
+    EVE_Write32( numero )
+    cmdOffset = EVE_IncCMDOffset( cmdOffset, 16 )
+    if etiqueta <> 0 and tagEnabled = YES then												' tagMask:
+        EVE_Write32( TAG_MASK )										'  Disable tagging
+        cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
+    end if
+end sub
+
+sub DisplayAPI_DrawRect (byval color as dword, byval alpha as byte, byval x as word, byval y as word, byval width as word, byval height as word, byval line_width as byte)
+    EVE_Write32( ColorRGB( color ) )							' colorRGB
+    cmdOffset = EVE_IncCMDOffset( cmdOffset, 4)
+    EVE_Write32( ColorA( alpha ) )											' colorA
+    cmdOffset = EVE_IncCMDOffset( cmdOffset, 4)
+    EVE_Write32( begin( LINE_STRIP ) )										' begin
+    cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
+    EVE_Write32( lineWidth( line_width * 16 ) )							' lineWidth
+    cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
+    
+    EVE_Write32( vertex2F( x * 16, y * 16 )	)								' vertex2F
+    cmdOffset = EVE_IncCMDOffset( cmdOffset, 4)
+    EVE_Write32( vertex2F( ( x + width ) * 16, y * 16 ) )					' vertex2F
+    cmdOffset = EVE_IncCMDOffset( cmdOffset, 4)
+    EVE_Write32( vertex2F( ( x + width ) * 16, ( y + height ) * 16 ) )		' vertex2F
+    cmdOffset = EVE_IncCMDOffset( cmdOffset, 4)
+    EVE_Write32( vertex2F( x * 16, ( y + height ) * 16 ) )					' vertex2F
+    cmdOffset = EVE_IncCMDOffset( cmdOffset, 4)
+    EVE_Write32( vertex2F( x * 16, y * 16 ) )								' vertex2F
+    cmdOffset = EVE_IncCMDOffset( cmdOffset, 4)
+    EVE_Write32(END_LIST)														' END_LIST
+    cmdOffset = EVE_IncCMDOffset( cmdOffset, 4)
+end sub
+
+sub DisplayAPI_DrawFilledRect (byval color as dword, byval alpha as byte, byval x as word, byval y as word, byval width as word, byval height as word, byval corner as byte, byval etiqueta as byte)
+    if etiqueta <> 0 and tagEnabled = YES  then 												' tagMask
+        EVE_Write32( TAG_MASK + 1 )										' Enable tagging
+        cmdOffset = EVE_IncCMDOffset( cmdOffset, 4)
+        EVE_Write32( tagWrite( etiqueta ) )										' tagWrite
+        cmdOffset = EVE_IncCMDOffset( cmdOffset, 4)
+	end if
+    EVE_Write32( colorRGB( color ) )							' colorRGB
+    cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
+    EVE_Write32( colorA( alpha ) )											' colorA
+    cmdOffset = EVE_IncCMDOffset( cmdOffset, 4)
+    EVE_Write32( lineWidth( corner * 16 ) )								' lineWidth
+    cmdOffset = EVE_IncCMDOffset( cmdOffset, 4)
+    EVE_Write32( begin( RECTS ) )											' begin
+    cmdOffset = EVE_IncCMDOffset( cmdOffset, 4)
+    
+	EVE_Write32( vertex2F( x * 16, y * 16 ) )								' vertex2F
+    cmdOffset = EVE_IncCMDOffset( cmdOffset, 4)
+    EVE_Write32( vertex2F( ( width + x )*16, ( height + y ) * 16 ) )		' vertex2F
+    cmdOffset = EVE_IncCMDOffset( cmdOffset, 4)
+    EVE_Write32( END_LIST )														' END_LIST
+    cmdOffset = EVE_IncCMDOffset( cmdOffset, 4)
+    
+    if etiqueta <> 0 and tagEnabled = YES  then 												' tagMask
+        EVE_Write32( TAG_MASK )										' Disable tagging
+        cmdOffset = EVE_IncCMDOffset( cmdOffset, 4)
+	end if
+end sub
+
+sub DisplayAPI_Button (byval color as dword, byval alpha as byte, byval x as word, byval y as word, byval width as word, byval height as word, byval font as word, byval options as word, byref texto as string, byval etiqueta as byte)
+    dim aux as dword
+	if etiqueta <> 0 and tagEnabled = YES then												' tagMask
+        EVE_Write32( TAG_MASK + 1 )										' Enable tagging
+        cmdOffset = EVE_IncCMDOffset( cmdOffset, 4)
+        EVE_Write32( tagWrite( etiqueta ) )										' tagWrite
+        cmdOffset = EVE_IncCMDOffset( cmdOffset, 4)
+	end if
+    
+    '--------------------------- Para la letra -----------------------------
+    EVE_Write32( colorRGB( &hD9D9D9 ) )							' colorRGB
+    cmdOffset = EVE_IncCMDOffset( cmdOffset, 4)
+    EVE_Write32( colorA( alpha ) )											' colorA
+    cmdOffset = EVE_IncCMDOffset( cmdOffset, 4)
+    EVE_Write32( CMD_FGCOLOR)
+    EVE_Write32( color )												' CMD_FGCOLOR
+    cmdOffset = EVE_IncCMDOffset( cmdOffset, 8)
+    
+    
+	'--------------------------- CMD_BUTTON -----------------------------
+    EVE_Write32( CMD_BUTTON )
+	aux = ( y and &hffff)
+	aux = ( aux shl 16) or ( x and &hffff)
+    EVE_Write32( aux )
+	aux = ( height and &hffff)
+	aux = ( aux shl 16) or ( width and &hffff)
+    EVE_Write32( aux )
+	aux = ( options and &hffff)
+	aux = ( aux shl 16) or ( font and &hffff)
+    EVE_Write32( aux )
+    
+    cmdOffset = EVE_IncCMDOffset( cmdOffset, 16 + DisplayAPI_SendString(texto) )
+    if etiqueta <> 0 and tagEnabled = YES then													' tagMask
+        EVE_Write32( TAG_MASK )										' Disable tagging
+        cmdOffset = EVE_IncCMDOffset( cmdOffset, 4)
+	end if
+end sub
+
+sub DisplayAPI_Toggle (byval color as dword, byval alpha as byte, byval x as word, byval y as word, byval width as word, byval font as word, byval options as word, byval state as word, byref texto as string, byval etiqueta as byte)
+    dim aux as dword
+	if etiqueta <> 0 and tagEnabled = YES then												' tagMask
+        EVE_Write32( TAG_MASK + 1 )										' Enable tagging
+        EVE_Write32( tagWrite( etiqueta ) )										' tagWrite
+        cmdOffset = EVE_IncCMDOffset( cmdOffset, 8)
+	end if
+    
+    '--------------------------- Para la letra -----------------------------
+    EVE_Write32( colorRGB( &hD9D9D9 ) )							' colorRGB
+    cmdOffset = EVE_IncCMDOffset( cmdOffset, 4)
+    EVE_Write32( colorA( alpha ) )											' colorA
+    cmdOffset = EVE_IncCMDOffset( cmdOffset, 4)
+    EVE_Write32( CMD_FGCOLOR)
+    EVE_Write32( color )												' CMD_FGCOLOR
+    cmdOffset = EVE_IncCMDOffset( cmdOffset, 8)
+    
+    
+	'--------------------------- CMD_BUTTON -----------------------------
+    EVE_Write32( CMD_TOGGLE )
+    EVE_Write16( x )
+    EVE_Write16( y )
+    EVE_Write16( width )
+    EVE_Write16( font )
+    EVE_Write16( options )
+    EVE_Write16( state )
+    
+    cmdOffset = EVE_IncCMDOffset( cmdOffset, 16 + DisplayAPI_SendString(texto) )
+    if etiqueta <> 0 and tagEnabled = YES then													' tagMask
+        EVE_Write32( TAG_MASK )										' Disable tagging
+        cmdOffset = EVE_IncCMDOffset( cmdOffset, 4)
+	end if
+end sub
+
+sub DisplayAPI_Keys( byval color as dword, byval x as word, byval y as word, byval width as word, byval height as word, byval font as word, byval options as word, byref texto as string)
+    dim length as dword
+    dim command_size as dword
+	dim strTexto as string
+	strTexto = texto
+    length = Len(strTexto)
+    command_size = 0
+	
+    EVE_Write32(colorRGB( &hFFFFFF ) )					' colorRGB
+    cmdOffset = EVE_IncCMDOffset( cmdOffset, 4)
+    EVE_Write32( colorA( &hFF ) )								' colorA
+    cmdOffset = EVE_IncCMDOffset( cmdOffset, 4 )
+    EVE_Write32( CMD_FGCOLOR )									' CMD_FGCOLOR
+    EVE_Write32( color )
+    cmdOffset = EVE_IncCMDOffset( cmdOffset, 8)
+    EVE_Write32( CMD_KEYS )										' CMD_KEYS
+    EVE_Write16( x and &hffff )
+    EVE_Write16( y and &hffff )
+    EVE_Write16( width and &hffff )
+    EVE_Write16( height and &hffff )
+    EVE_Write16( font and &hffff )
+    EVE_Write16( options and &hffff )
+    command_size = ( command_size + 16 )
+    command_size = ( command_size + DisplayAPI_SendString( texto ) )
+    cmdOffset = EVE_IncCMDOffset( cmdOffset, command_size)
+end sub
+
+function DisplayAPI_GetTextWidth( byref texto as char, byval font as byte ) as word
+    dim a as byte
+    dim length as byte
+    dim p as dword
+    p = EVE_MemRead32(ROM_FONT_ADDR)
+    dim prev_width as dword
+	
+	dim strTexto as string
+	strTexto = texto
+    length = Len(strTexto)
+    
+    for a = 0 to length - 1
+        prev_width = p + ( 148 * ( font - 16 ) )
+        DisplayAPI_GetTextWidth = DisplayAPI_GetTextWidth + EVE_MemRead8( prev_width + mid(strTexto,a+1,1) )
+    next a
+end function
+
+sub DisplayAPI_DrawNumberBox ( byval color as dword, byval colort as dword, byval alpha as byte, byval x as word, byval y as word, byval width as word, byval height as word, byval corner as byte, byval font as word, byval options as word, byval numero as word, byval etiqueta as byte)
+
+	DisplayAPI_DrawFilledRect (color, alpha, x, y, width, height, corner, etiqueta)
+    
+	DisplayAPI_WriteNumber(colort, alpha, ( x + width / 2) and &hffff, ( y + height / 5 ) and &hffff, font, options, numero, etiqueta)
+end sub
+
+
+sub DisplayAPI_DrawTextBox ( byval color as dword, byval colort as dword, byval alpha as byte, byval x as word, byval y as word, byval width as word, byval height as word, byval corner as byte, byval font as word, byval options as word, byref texto as string, byval etiqueta as byte)
+	DisplayAPI_DrawFilledRect (color, alpha, x, y, width, height, corner, etiqueta)
+	DisplayAPI_WriteText(colort, alpha, ( x + width / 2) and &hffff, ( y + height / 5 ) and &hffff, font, options, texto, etiqueta)
+end sub
+
+
+sub DisplayAPI_FloatingScreen( byval x as word, byval y as word, byval width as word, byval height as word )
+    EVE_Write32( scissorXY( x, y ) )
+    cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
+    EVE_Write32( scissorSize( width, height ) )
+    cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
+end sub
+
+sub DisplayAPI_CloseFloatingScreen()
+    EVE_Write32( scissorXY( 0, 0 ) )
+    cmdOffset =  EVE_IncCMDOffset(cmdOffset, 4)
+    EVE_Write32(scissorSize( 800, 480 ) )
+    cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
+end sub
+
+sub DisplayAPI_Slider( byval x as word, byval y as word, byval w as word, byval h as word, byval options as word, byval value as word, byval range as word,  byval etiqueta as byte)
+
+	EVE_Write32(CMD_SLIDER)
+	EVE_Write16( x and &hffff )
+    EVE_Write16( y and &hffff )
+    EVE_Write16( w and &hffff )
+    EVE_Write16( h and &hffff )
+	EVE_Write16( options and &hffff )
+	EVE_Write16( value and &hffff )
+	EVE_Write16( range and &hffff )
+    cmdOffset = EVE_IncCMDOffset(cmdOffset, 16)
+    
+end sub
+
+sub DisplayAPI_Scroll( byval alpha as byte, byval x as word, byval y as word, byval w as word, byval h as word, byval options as word, byval value as word, byval size as word, byval range as word,  byval etiqueta as byte)
+    'if etiqueta <> 0 and tagEnabled = YES then										' tagMask
+    '    EVE_Write32( TAG_MASK + 1 )							' Enable tagging
+    '    cmdOffset = EVE_IncCMDOffset(cmdOffset, 4) 
+    '    EVE_Write32( tagWrite( etiqueta ) ) 							' tagWrite
+    '    cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)        
+    'end if
+    'EVE_Write32( colorRGB( 0 ) )                        	' colorRGB
+    'cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
+    'EVE_Write32( colorA( alpha ) )        						' colorA
+    'cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
+    'EVE_Write32( CMD_BGCOLOR )									' Color
+    'EVE_Write32( &hE6E6E6 )
+    'cmdOffset = EVE_IncCMDOffset(cmdOffset, 8)
+    'EVE_Write32( CMD_FGCOLOR)
+    'EVE_Write32( &hA6A6A6)
+    'cmdOffset = EVE_IncCMDOffset(cmdOffset, 8)
+    
+    
+    EVE_Write32( CMD_SCROLLBAR)
+	EVE_Write16( x and &hffff )
+    EVE_Write16( y and &hffff )
+	EVE_Write16( w and &hffff )
+    EVE_Write16( h and &hffff )
+	EVE_Write16( options and &hffff )
+    EVE_Write16( value and &hffff )
+	EVE_Write16( size and &hffff )
+    EVE_Write16( range and &hffff )
+    cmdOffset = EVE_IncCMDOffset( cmdOffset, 20)
+    'EVE_Write32( CMD_TRACK)										' Track
+	'EVE_Write16( x and &hffff )
+    'EVE_Write16( y and &hffff )
+	'EVE_Write16( w and &hffff )
+    'EVE_Write16( h and &hffff )
+    'EVE_Write32( etiqueta )
+    'cmdOffset = EVE_IncCMDOffset(cmdOffset, 16)
+   
+    'if etiqueta <> 0 and tagEnabled = YES then										' tagMask
+    '    EVE_Write32(TAG_MASK )								' Disable tagging
+    '    cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
+    'end if
+end sub
+
+
+sub DisplayAPI_Track( byval x as word, byval y as word, byval w as word, byval h as word, byval etiqueta as word )
+    EVE_Write32( CMD_TRACK)
+    EVE_Write16( x and &hffff )
+    EVE_Write16( y and &hffff )
+    EVE_Write16( w and &hffff )
+    EVE_Write16( h and &hffff )
+    EVE_Write32(etiqueta)
+    cmdOffset = EVE_IncCMDOffset(cmdOffset, 16)
+end sub
+
+sub DisplayAPI_Spinner(byval x as word, byval y as word, byval style as word, byval scale as word)
+    EVE_Write32(colorRGB( &hFFFFFF ) )					' colorRGB:
+    cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
+    EVE_Write32( colorA( 255 ) )								' colorA 
+    cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
+    
+    EVE_Write32(CMD_SPINNER)
+    EVE_Write32( ( y shl 16 ) or ( x and &hffff ) )
+    EVE_Write32( ( scale shl 16 ) or ( style and &hffff ) )
+    cmdOffset = EVE_IncCMDOffset(cmdOffset, 12)
+end sub
+
+sub DisplayAPI_Coordinates ()
+    touch = EVE_MemRead32( REG_TOUCH_SCREEN_XY )
+end sub
+sub DisplayAPI_LoadImage(byval ptr as byte, byval options as byte)
+    EVE_Write32(CMD_LOADIMAGE)  ' Escribe el comando en el buffer de comandos
+	EVE_Write32(ptr)     ' Especifica la dirección de la imagen en la memoria
+	EVE_Write32(options)        ' Define opciones para la carga de la imagen
+    cmdOffset = EVE_IncCMDOffset(cmdOffset, 12)
+end sub
+sub DisplayAPI_GetProps( byval ptr as dword, byval w as dword, byval h as dword)
+    EVE_Write32( CMD_GETPROPS )
+    EVE_Write32( ptr )
+    EVE_Write32( w )
+    EVE_Write32( h )
+    cmdOffset = EVE_IncCMDOffset(cmdOffset, 16)
+end sub
+
+sub DisplayAPI_BitmapHandle( byval handle as byte)
+	EVE_Write32( bitmapHandle( handle ) )
+    cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
+end sub
+
+sub DisplayAPI_BitmapSource( byval addr as dword )
+	EVE_Write32( bitmapSource( addr ) )
+    cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
+end sub
+
+sub DisplayAPI_BitmapLayout( byval format as byte, byval linestride as word, byval height as word)   
+    EVE_Write32( bitmapLayout( format, linestride, height ) )
+    cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
+end sub
+
+sub API_BITMAP_SIZE( byval filter as byte, byval wrapx as byte, byval wrapy as byte, byval width as word, byval height as word)
+    EVE_Write32( bitmapSize ( filter, wrapx, wrapy, width, height ) )
+    cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
+end sub
+
+sub DisplayAPI_BitmapTransformA( byval a as dword)
+    EVE_Write32( bitmapTransformA ( a ) )           
+    cmdOffset = EVE_IncCMDOffset(cmdOffset, 4) 
+end sub
+
+sub DisplayAPI_BitmapTransformE( byval e as dword )
+    EVE_Write32(bitmapTransformE ( e ) )                  
+    cmdOffset = EVE_IncCMDOffset(cmdOffset, 4) 
+end sub
+sub API_BITMAP_LAYOUT_H( byval linestride as byte, byval height as byte)
+    EVE_Write32( bitmapLayoutH(linestride,height) )
+    cmdOffset = EVE_IncCMDOffset( cmdOffset, 4 )
+end sub
+
+sub DisplayAPI_BitmapHSize( byval width as byte, byval height as byte)
+    EVE_Write32 ( bitmapSizeH ( width , height ) )              
+    cmdOffset = EVE_IncCMDOffset( cmdOffset, 4 )
+end sub
+
+sub DisplayAPI_Gradient( byval x0 as word, byval y0 as word, byval rgb0 as dword, byval x1 as word, byval y1 as word, byval rgb1 as dword)
+    EVE_Write32( CMD_GRADIENT )
+    EVE_Write32( ( y0 shl 16 ) or ( x0 and &hffff ) )
+    EVE_Write32( rgb0 )
+    EVE_Write32( ( y1 shl 16 ) or ( x1 and &hffff ) )
+    EVE_Write32( rgb1 )
+    cmdOffset = EVE_IncCMDOffset(cmdOffset, 20)
+end sub
+
+function DisplayAPI_SendString(byref texto as string) as byte
+    dim StringLength as dword
+    dim length as dword
+    dim character as char
+
+	dim strTexto as string
+	strTexto = texto
+    StringLength = Len(strTexto)
+
+	for length = 1 to StringLength
+		character = asc(mid(strTexto,length,1))
+		EVE_Write8( character )															' Append one null as ending flag
+	next length
+    EVE_Write8( 0 )															' Append one null as ending flag
+    
+	StringLength = StringLength + 1
+    DisplayAPI_SendString = StringLength
+    ' ------------------------- Pad to multiple of 4 -----------------------------
+    StringLength = StringLength and &h03 									' Mask off the bottom 2 bits and see if multiple of 4
+    if StringLength = &h03 then
+        EVE_Write8( &h00 )
+        DisplayAPI_SendString = DisplayAPI_SendString + 1
+    else if StringLength = &h02 then
+        EVE_Write8( &h00 )
+        EVE_Write8( &h00 )
+        DisplayAPI_SendString = DisplayAPI_SendString + 2
+    else if StringLength = &h01 then
+        EVE_Write8( &h00 )
+        EVE_Write8( &h00 )
+        EVE_Write8( &h00 )
+        DisplayAPI_SendString = DisplayAPI_SendString + 3
+    end if
+end function

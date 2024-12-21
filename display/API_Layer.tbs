@@ -1,11 +1,10 @@
 include "Display\FT8xx.tbh"
 
-'cosas mias
+
+
 dim imgAddress as dword
 
 declare function DisplayAPI_SendString(byref texto as string) as byte
-
-'fin de cosas mias
 
 dim cmdOffset as word
 dim touch as byte
@@ -38,6 +37,7 @@ sub DisplayAPI_DeleteTags ()
 end sub
 
 'SUBRUTINA PARA EL FONDO DE PANTALLA CON DEGRADE HORIZONTAL (INTENTO DE DIAGONAL)
+
 sub DisplayAPI_FONDODEGRADE(byval colorStart as dword, byval colorEnd as dword)
     dim SCREEN_WIDTH as dword
     dim SCREEN_HEIGHT as dword
@@ -97,66 +97,6 @@ sub DisplayAPI_FONDODEGRADE(byval colorStart as dword, byval colorEnd as dword)
     EVE_Write32( CMD_SWAP )
     cmdOffset = EVE_IncCMDOffset( cmdOffset, 4)
 end sub
-
-''SUBRUTINA DEL DEGRADE PARA EL FONDO 
-
-'sub DisplayAPI_NewScreen (byval colorStart as dword, byval colorEnd as dword)
- '   dim SCREEN_WIDTH as dword
-  '  dim SCREEN_HEIGHT as dword
-   ' SCREEN_WIDTH = 12800
-    'SCREEN_HEIGHT = 7680
-'    dim steps as dword
- '   steps = 50  ' Número de pasos del gradiente
-  '  
-   ' dim i as dword
-    'dim rStart, gStart, bStart as dword
-   ' dim rEnd, gEnd, bEnd as dword
-   ' dim rStep, gStep, bStep as float
-   ' dim rCurrent, gCurrent, bCurrent as dword
-    
-    ' Extraer componentes RGB de los colores inicial y final
-    'rStart = (colorStart / &h10000) mod &h100
-    'gStart = (colorStart / &h100) mod &h100
-    'bStart = colorStart mod &h100
-    
-    'rEnd = (colorEnd / &h10000) mod &h100
-    'gEnd = (colorEnd / &h100) mod &h100
-    'bEnd = colorEnd mod &h100
-    
-    ' Calcular los incrementos por paso
-    'rStep = (rEnd - rStart) / steps
-    'gStep = (gEnd - gStart) / steps
-    'bStep = (bEnd - bStart) / steps
-    
-    ' Dibujar cada paso del gradiente
-    'EVE_WaitCmdFifoEmpty()
-    'displaySPISelect()
-   ' EVE_AddrForWr( RAM_CMD + cmdOffset )
-    
-    'EVE_Write32( CMD_DLSTART )
-    'cmdOffset = EVE_IncCMDOffset( cmdOffset, 4)
-    
-    'for i = 0 to steps
-        ' Calcular color actual
-     '   rCurrent = rStart + rStep * i
-      '  gCurrent = gStart + gStep * i
-       ' bCurrent = bStart + bStep * i
-        
-        ' Dibujar rectángulo del paso actual
-        'EVE_Write32( colorRGB( (rCurrent * &h10000) or (gCurrent * &h100) or bCurrent ) )
-        'cmdOffset = EVE_IncCMDOffset( cmdOffset, 4)
-        'EVE_Write32( begin( RECTS ) )
-        'cmdOffset = EVE_IncCMDOffset( cmdOffset, 4)
-        'EVE_Write32( vertex2f( 0, i * (SCREEN_HEIGHT / steps) ) )
-     '   cmdOffset = EVE_IncCMDOffset( cmdOffset, 4)
-    '    EVE_Write32( vertex2f( SCREEN_WIDTH, (i + 1) * (SCREEN_HEIGHT / steps) ) )
-   '     cmdOffset = EVE_IncCMDOffset( cmdOffset, 4)
-  '  next i
-    
-     'Finalizar Display List
- '   EVE_Write32( CMD_SWAP )
-    'cmdOffset = EVE_IncCMDOffset( cmdOffset, 4)
-'end sub
 
 'ESTO ERA PARA UN SOLO FONDO DE PANTALLA QUE HIZO JULI 
 sub DisplayAPI_FONDO (byval color as dword)

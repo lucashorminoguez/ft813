@@ -14,10 +14,13 @@ sub on_sys_init()
 	beep.divider = BEEP_DIV
 '====================================================================
 '--------------------------- INIT TOUCHSCREEN ------------------------------
-	DisaplyAPI_Init()
-	DisplayAPI_FONDO(&h66CCFF)
+	DisaplyAPI_Init() 'PRENDO EL DISPLAY
+	DisplayAPI_FONDO(&h66CCFF)   'INICIALIZO PANTALLA Y PONGO FONDO CELESTE 
 	DisplayAPI_WriteText(COLORCUADRO,255,400,70,31,512,"DISPLAY FT813",0)
 	DisplayAPI_Button (COLORCUADRO,255,350,250,190,90,31,512,"BOTON",0)
 	
-	DisplayAPI_EndScreen()
+	DisplayAPI_EndScreen() ' TERMINO MI PANTALLA 
 	end sub 
+	sub main ()
+		
+	end sub

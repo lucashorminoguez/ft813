@@ -1,7 +1,18 @@
 include "Display\FT8xx.tbh"
-
-
-
+include "display\API_Layer.tbh"
+dim entradaValue(10) as word
+dim screenState as byte
+dim tagAnterior as byte
+dim displayInUse as boolean
+dim mensajeInformativo as string
+dim modoMensajeInformativo as no_yes
+dim mensajeInformativoPendiente as no_yes = NO
+dim timeMensajeInformativo as word
+dim datosGuardados as no_yes
+dim pantallaActual as byte = 0 
+dim pantallaAGuardar as byte
+dim pantallaActualIndex as byte
+dim tag as byte
 dim imgAddress as dword
 
 declare function DisplayAPI_SendString(byref texto as string) as byte
@@ -490,15 +501,28 @@ sub DisplayAPI_Track( byval x as word, byval y as word, byval w as word, byval h
 end sub
 
 sub DisplayAPI_Spinner(byval x as word, byval y as word, byval style as word, byval scale as word)
-    EVE_Write32(colorRGB( &hFFFFFF ) )					' colorRGB:
+    ' Color del spinner
+    EVE_Write32(colorRGB(COLORCUADRO))  ' Configurar color del spinner
     cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
-    EVE_Write32( colorA( 255 ) )								' colorA 
+
+    EVE_Write32(colorA(255))         ' Configurar transparencia
     cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
-    
-    EVE_Write32(CMD_SPINNER)
-    EVE_Write32( ( y shl 16 ) or ( x and &hffff ) )
-    EVE_Write32( ( scale shl 16 ) or ( style and &hffff ) )
-    cmdOffset = EVE_IncCMDOffset(cmdOffset, 12)
+
+    ' CMD_SPINNER
+    EVE_Write32(CMD_SPINNER)         ' Escribir el comando CMD_SPINNER
+    cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
+
+    ' Escribir coordenada X (16 bits)
+    EVE_Write16(x)                   ' Escribir X
+    cmdOffset = EVE_IncCMDOffset(cmdOffset, 2)
+
+    ' Escribir coordenada Y (16 bits)
+    EVE_Write16(y)                   ' Escribir Y
+    cmdOffset = EVE_IncCMDOffset(cmdOffset, 2)
+
+    ' Escribir Style y Scale (32 bits)
+    EVE_Write32((scale shl 16) or (style and &hffff))
+    cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
 end sub
 
 sub DisplayAPI_Coordinates ()
@@ -599,3 +623,166 @@ function DisplayAPI_SendString(byref texto as string) as byte
         DisplayAPI_SendString = DisplayAPI_SendString + 3
     end if
 end function
+function UI_ReadDisplayTag () as byte
+    dim tagLeido as byte = 0         ' tag de los botones en pantalla 
+	dim x as byte 
+	if displayInUse = true then
+		UI_ReadDisplayTag = 0
+		exit function
+	end if
+	
+'	if modoMensajeInformativo = messageTimed then
+'		if timeMensajeInformativo > 0 then
+'			timeMensajeInformativo = timeMensajeInformativo - 1
+'		else
+'			tagLeido = 254
+'			modoMensajeInformativo = messageBlocking
+'		end if
+'	else
+		displayInUse = true
+    	tagLeido = displayAPI_ReadTag()
+		displayInUse = false
+ '   end if
+	
+	if tagLeido <> 0 and tagLeido <> 255 then
+		UI_ReadDisplayTag = 0
+        screenState = SCREEN_PRESSED
+        tagAnterior = tagLeido
+    else if screenState = SCREEN_PRESSED then
+        screenState = SCREEN_RELEASED
+		UI_ReadDisplayTag = tagAnterior
+		tag = tagAnterior
+		tagAnterior = 0
+    else
+        screenState=SCREEN_UNPRESSED
+		UI_ReadDisplayTag = 0
+    end if
+end function
+sub UI_display()
+	dim refresh as byte = UI_ReadDisplayTag()
+	dim refreshInputs as boolean = UI_refreshInputs()
+	if refresh <> 0 or refreshInputs = true then
+		UI_goToScreen(refresh)
+'		UI_guardarValores()
+		UI_cargarValores()
+		UI_reenviarPantalla()
+	end if
+end sub
+sub UI_updateMessage(byref message as string)
+	if UI_showMessage(message) then
+		UI_reenviarPantalla()
+	end if
+end sub
+function UI_goToScreen(byval tagValue as byte) as byte
+	select case tagValue
+		case tagboton:
+		UI_SECOND()
+		case tagATRAS:
+		UI_Home()
+		case else:
+			sys.reboot()
+		
+	end select 
+end function 
+function UI_refreshInputs() as boolean
+	UI_refreshInputs = false
+	
+	if pantallaActual <> PANTALLA_ENTRADAS then
+		exit function
+	end if
+	
+	'if entradaValue(0) <> io.lineget( PrintEnd ) then
+	'	entradaValue(0) = io.lineget( PrintEnd )
+	'	UI_refreshInputs = true
+	'end if
+
+	'if entradaValue(1) <> io.lineget( Error_M ) then
+	'	entradaValue(1) = io.lineget( Error_M )
+	'	UI_refreshInputs = true
+	'end if
+
+'	if entradaValue(2) <> io.lineget( Paper ) then
+'		entradaValue(2) = io.lineget( Paper )
+'		UI_refreshInputs = true
+'	end if
+
+'	if entradaValue(3) <> io.lineget( Ribbon ) then
+'		entradaValue(3) = io.lineget( Ribbon )
+'		UI_refreshInputs = true
+'	end if
+
+'	if entradaValue(4) <> io.lineget( Online ) then
+'		entradaValue(4) = io.lineget( Online )
+'		UI_refreshInputs = true
+'	end if
+
+'	if entradaValue(5) <> io.lineget( Plataforma ) then
+'		entradaValue(5) = io.lineget( Plataforma )
+'		UI_refreshInputs = true
+'	end if
+	
+'	if entradaValue(6) <> io.lineget( Home ) then
+'		entradaValue(6) = io.lineget( Home )
+'		UI_refreshInputs = true
+'	end if
+
+'	if entradaValue(7) <> io.lineget( Ciclo ) then
+'		entradaValue(7) = io.lineget( Ciclo )
+'		UI_refreshInputs = true
+'	end if
+	
+	if UI_refreshInputs then
+		UI_reenviarPantalla()
+	end if
+end function
+sub UI_cargarValores()
+	dim aux as byte = pantallaActual and FLAGS_PANTALLA
+	dim pantalla as byte = pantallaActual and VALORES_PANTALLA
+	if aux = CARGAR_VALORES then
+		pantallaActual = pantallaActual - CARGAR_VALORES
+		select case pantalla
+			case PANTALLA_ENTRADAS:
+			
+'			case PANTALLA_SALIDAS:
+			case else:
+				sys.reboot()
+		end select 
+	end if
+end sub
+sub UI_reenviarPantalla()
+	dim pantalla as byte = pantallaActual and VALORES_PANTALLA
+	select case pantalla
+		case PANTALLA_HOME:
+		case else:
+			sys.reboot()
+	end select
+end sub
+function UI_showMessage(byref message as string) as no_yes
+	if message <> mensajeInformativo then
+		mensajeInformativoPendiente = YES
+		mensajeInformativo = message
+	else
+		mensajeInformativoPendiente = NO
+	end if
+	UI_showMessage = mensajeInformativoPendiente
+end function
+sub UI_Home ()
+	while displayInUse = true
+	wend
+	displayInUse = true
+	DisplayAPI_FONDO(&h66CCFF)   'INICIALIZO PANTALLA Y PONGO FONDO CELESTE 
+	DisplayAPI_WriteText(COLORCUADRO,255,400,70,31,512,"DISPLAY FT813",0)
+	DisplayAPI_Button (COLORCUADRO,255,350,250,190,90,31,512,"BOTON",tagboton)
+	DisplayAPI_EndScreen() ' TERMINO MI PANTALLA 
+	displayInUse = false
+end sub
+sub UI_SECOND ()
+	while displayInUse = true
+	wend
+	displayInUse = true
+	DisplayAPI_FONDO(&hff33FF)   'INICIALIZO PANTALLA Y PONGO FONDO VIOLETA
+	DisplayAPI_WriteText(&hffccff,255,400,70,31,512,"Para volver presione ATRAS",0)
+	DisplayAPI_Button (COLORCUADRO,255,350,250,190,90,31,512,"ATRAS",tagATRAS)
+	DisplayAPI_EndScreen() ' TERMINO MI PANTALLA 
+	displayInUse = false
+end sub

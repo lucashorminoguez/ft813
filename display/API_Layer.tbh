@@ -40,5 +40,29 @@ declare sub DisplayAPI_Toggle (byval color as dword, byval alpha as byte, byval 
 declare sub DisplayAPI_DrawNumberBox ( byval color as dword, byval colort as dword, byval alpha as byte, byval x as word, byval y as word, byval width as word, byval height as word, byval corner as byte, byval font as word, byval options as word, byval numero as word, byval etiqueta as byte)
 declare function displayAPI_ReadTag as byte
 declare function displayAPI_ReadYScroll as dword
-
+declare function UI_refreshInputs() as boolean
+declare function UI_ReadDisplayTag () as byte 
+declare function UI_goToScreen(byval tagValue as byte) as byte
+declare sub UI_reenviarPantalla()
+declare sub UI_guardarValores()
+declare sub UI_cargarValores()
+#define tagboton 1
+#DEFINE tagATRAS 2
+declare function getScreenState as byte
+#define SCREEN_PRESSED		0
+#define SCREEN_RELEASED		1
+#define SCREEN_UNPRESSED	2
+#define CARGAR_VALORES					&h80
+#define GUARDAR_VALORES					&h40
+#define RECARGAR_VALORES				&hC0
+#define VALORES_PANTALLA				&h3F
+#define FLAGS_PANTALLA					&hC0
+declare function UI_showMessage(byref message as string) as no_yes
+#define PANTALLA_ENTRADAS				4
 #endif
+declare sub UI_Estados (byval cantidadEntradas as byte, byref entrada(10) as string, byref entradaValue(10) as word)
+#define PANTALLA_HOME					0
+declare sub UI_display()
+#DEFINE COLORCUADRO  &H3300FF
+declare sub UI_Home()
+DECLARE sub UI_Second

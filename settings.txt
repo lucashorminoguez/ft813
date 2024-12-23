@@ -1,0 +1,64 @@
+!!! WATCH OUT FOR THE NUM_OF_SETTINGS CONSTAINT in global.tbh !!!
+
+Name:		Dos caracteres de nombre funcion
+Typ:		D,B,W y S, decimal, byte, word y string
+Members:	Numero de miembros, nunca lo use.
+Par1 y Par2: Minimos y maximos de la variable, aparentementa funciona solo con B o W
+Ini:		Cuando es A indica que se actualizara el valor de default si se ejecuta resetde parametros
+Defval:     Valor de ajuste al resetear con: settings_restore_def
+
+
+  1		2		3		4		5		6	7				
+  Name	Typ 	Members	Param1	Param2	ini	Defval	Solo recordatorio y ayuda guia	
+  
+													Ajuste Parametros
+
+>>PE	B		1		123		123		A	123		Primer Encencido
+>>TN	B		1		0		5		A	0		Cambio progrograma/Tarea
+
+>>TE	W		1		0		65535	A	0		Etiquetas impresas totales
+
+>>DC	W		1		0		300		A	200	 	Retardo Aplicacion
+
+>>RA	W		1		0		250		A	20 	 	Retardo Assist
+>>DA	W		1		0		250		A	30		Duracion Assist
+
+>>RV	W		1		0		250		A	50  	Retardo Vacio
+>>DV	W		1		0		250		A	50  	Duracion Vacio
+
+>>RT	W		1		0		200		A	10	 	Retardo Tamp
+>>PT	W		1		0		500		A	200	 	Planchado Tamp
+>>DT	W		1		0		500		A	500	 	Duracion Tamp
+
+>>RB	W		1		0		200		A	10	 	Retardo Blow
+>>DB	W		1		0		500		A	200	 	Duracion Blow
+>>BR	B		1		0		50		A	50	 	Repeticion Blow
+
+>>DR	W		1		1		200		A	40		Duracion de Ready
+
+>>OC	B		1		0		1		A	0		Orden Ciclo
+>>FS	B		1		0		1		A	0		Flanco del Sensor Producto
+
+>>EP	W		1		0		65535	A	0		Etiquetas impresas parciales
+
+>>I0	B		1		0		255		A	192     Primer byte de la IP
+>>I1	B		1		0		255		A	168     Segundo byte de la IP
+>>I2	B		1		0		255		A	254     Tercer byte de la IP
+>>I3	B		1		0		255		A	254     Cuarto byte de la IP
+
+>>M0	B		1		0		255		A	192		Primer byte de la Mascara sub red
+>>M1	B		1		0		255		A	168		Segundo byte de la Mascara sub red
+>>M2	B		1		0		255		A	255		Tercer byte de la Mascara sub red
+>>M3	B		1		0		255		A	255		Cuarto byte de la Mascara sub red
+
+>>PU	W		1		1000	9999	A	4000	Puerto
+
+>>HE	B		1		0		1		A	1	 	Habilitacion Ethernet
+
+>>II	B		1		0		1		A	1		Inhibir la Impresora
+
+
+
+
+>>TD	S		1		0		0		I	^
+>>TT	S		1		0		0		I	^

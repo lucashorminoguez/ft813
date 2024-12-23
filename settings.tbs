@@ -1,0 +1,376 @@
+include "settings.tbh"
+#define MAX_NUM_SETTINGS		32'51
+#define MAX_SETTING_NAME_LEN	4
+#define STG_FIELD_SEPARATOR		9
+#define STG_END_OF_LINE			13
+declare function setting_find(byref stg_name as string(2)) as byte
+declare function setting_sg(byref stg_name as string, index as byte, byref stg_value as string, op as en_stg_rdwr) as en_stg_status
+declare sub check_for_missing_fields(curr_pos as word, line_end_pos as word)
+type sdr_type
+	name as string(MAX_SETTING_NAME_LEN) 'name
+	stype as byte
+	members as byte
+	p1 as word
+	p2 as word
+	ini as byte
+	defVal as dword
+	eeaddr as word
+	romaddr_def as word
+	member_size as byte
+end type
+dim sdr(MAX_NUM_SETTINGS) as sdr_type
+dim num_stg as byte
+dim nro_tarea as byte = 100
+
+public sub settings_init()
+'This procedure MUST BE called before any other function in this library is used. It initializes
+'necessary global structure sdr() and related stuff.
+	dim auxiliarString as string															' ****** <- Tenía un largo de 24 strings
+	dim filePointer, EEPROMAddress, line_end as word
+	dim f, x, jobs as byte	
+	num_stg = 0 																			'will count settings (starting from 0)
+	romfile.open("settings.txt")															'this file is a setting descriptor table
+	
+	for jobs = 0 to MAX_NUM_JOBS
+		filePointer = romfile.find(romfile.pointer,">>",1)
+		while filePointer <> 0
+			romfile.pointer = filePointer + 2												' we are now at the ">>" pointing at the beginning of one setting descriptor line
+			line_end=romfile.find(romfile.pointer,chr(STG_END_OF_LINE),1)					' find the end of this setting descriptor line
+			do																				' extract setting name
+				filePointer = romfile.find( romfile.pointer, chr( STG_FIELD_SEPARATOR ), 1 ) 
+				check_for_missing_fields( filePointer, line_end )			
+				auxiliarString = romfile.getdata( filePointer - romfile.pointer )
+				romfile.pointer = filePointer + 1
+			loop while auxiliarString = ""
+			if len( auxiliarString ) > MAX_SETTING_NAME_LEN then							' name too long?
+				sys.halt
+				num_stg = 0 																' you need to increase MAX_SETTING_NAME_LEN!
+			end if
+			sdr(num_stg).name = auxiliarString
+			do																				' extract setting type
+				filePointer = romfile.find( romfile.pointer, chr( STG_FIELD_SEPARATOR), 1 ) 
+				check_for_missing_fields( filePointer, line_end )
+				auxiliarString = romfile.getdata( filePointer - romfile.pointer )
+				romfile.pointer = filePointer + 1
+			loop while auxiliarString = "" 		
+			sdr(num_stg).stype=asc( auxiliarString )
+			do																				' extract the number of members
+				filePointer = romfile.find( romfile.pointer, chr( STG_FIELD_SEPARATOR), 1 ) 
+				check_for_missing_fields( filePointer, line_end )
+				auxiliarString = romfile.getdata( filePointer - romfile.pointer )
+				romfile.pointer = filePointer + 1
+			loop while auxiliarString = "" 		
+			sdr(num_stg).members = val( auxiliarString )
+			do																				' extract p1
+				filePointer = romfile.find( romfile.pointer, chr( STG_FIELD_SEPARATOR), 1 ) 
+				check_for_missing_fields( filePointer, line_end )
+				auxiliarString = romfile.getdata( filePointer - romfile.pointer )
+				romfile.pointer = filePointer + 1
+			loop while auxiliarString = "" 		
+			sdr( num_stg ).p1 = val( auxiliarString )
+			do																				' extract p2
+				filePointer = romfile.find( romfile.pointer, chr( STG_FIELD_SEPARATOR), 1 ) 
+				check_for_missing_fields( filePointer, line_end )
+				auxiliarString = romfile.getdata( filePointer - romfile.pointer )
+				romfile.pointer = filePointer + 1
+			loop while auxiliarString = "" 		
+			sdr( num_stg ).p2 = val( auxiliarString )
+			do																				'extract initialization mode
+				filePointer = romfile.find( romfile.pointer, chr( STG_FIELD_SEPARATOR), 1 ) 
+				check_for_missing_fields( filePointer, line_end )
+				auxiliarString = romfile.getdata( filePointer - romfile.pointer )
+				romfile.pointer = filePointer + 1
+			loop while auxiliarString = "" 		
+			sdr(num_stg).ini=asc( auxiliarString )
+			do																				'memorize the offset of the default value
+				auxiliarString = romfile.getdata(1)
+			loop while auxiliarString = chr(STG_FIELD_SEPARATOR)
+			if auxiliarString = chr(STG_END_OF_LINE) then									'are we at the end of the string?
+				sys.halt
+				num_stg = 0 																'default value field is missing in the descriptor
+			end if
+			sdr(num_stg).romaddr_def = romfile.pointer - 1
+			filePointer = romfile.find(romfile.pointer,">>",1)								'done with this setting, move to next one
+			num_stg = num_stg + 1
+			EEPROMAddress = EEPROMAddress + x
+			if num_stg >= MAX_NUM_SETTINGS and filePointer <> 0 then						'exceeded the max number of settings?
+				sys.halt
+				num_stg = 0 																'you need to increase MAX_NUM_SETTINGS!
+			end if
+		
+		wend
+																							'now calculate eeprom addresses
+		EEPROMAddress = 1 + ( jobs * 150 )													'will count offset in the EEPROM (addresses start from 1).
+		for f = 0 to num_stg-1
+			sdr(f).eeaddr = EEPROMAddress
+			select case chr(sdr(f).stype)
+			case "B":																		'byte (takes 2 bytes in storage- 1 byte of data and checksum)
+				sdr(f).member_size = 2 														'fill out member length
+			case "W":																		'word (takes 3 bytes in storage- 2 bytes of data and checksum)
+				sdr(f).member_size = 3 														'fill out member length
+			case else:																		'string or dot-decimal string (takes max_len + 2 bytes in storage- len and cs)
+				sdr(f).member_size = 2 + sdr(f).p2 											'fill out member length
+			end select
+			x = sdr(f).member_size
+			EEPROMAddress = EEPROMAddress + sdr(f).member_size * sdr(f).members				'update EEPROM address counter
+		next f
+		
+		if EEPROMAddress >= stor.size then													'exceeded EEPROM capacity?
+			sys.halt
+			num_stg=0 																		'your settings do not fit in the EEPROM!
+		end if
+	next jobs
+	
+	if getValue ( "PE" ) <> 124 THEN
+		settings_restore_def(YES)
+		nro_tarea = 0
+		setValue(124,"PE")
+	end if
+end sub
+
+sub check_for_missing_fields(curr_pos as word, line_end_pos as word)
+	if curr_pos=0 or curr_pos>line_end_pos then
+		sys.halt
+		'one of your descriptor lines has missing fields
+	end if
+end sub
+function settings_restore_def(init_field_override as no_yes) as en_stg_status
+'Initializes settings. 
+'When init_field_override=NO, a particular setting is initialized only when the "Ini" field for this
+'setting is "A" or when the setting is invalid.
+'When init_field_override=YES, all settings are initialized irregardless of other factors.
+
+	dim x,f,f2 as byte
+	dim pos as word
+'	dim s as string(64)
+	dim s3 as string(32)
+	
+	dim j as byte
+	
+	stor.setdata(0,2018)' inicia nro tarea en la eeprom y la variable
+'	nro_tarea = val(stor.getdata(2018,1))
+
+	
+	romfile.open("settings.txt")
+	
+	for f=0 to num_stg-1
+		for f2=0 to sdr(f).members-1
+			'do we need to initialize this setting?
+			if sdr(f).ini=`A` or init_field_override=YES or setting_sg(sdr(f).name,f2,s3,EN_STG_GET)<>EN_STG_STATUS_OK then
+				'yes, initialization is required- get default value
+				romfile.pointer=sdr(f).romaddr_def
+				pos=romfile.find(romfile.pointer,chr(STG_END_OF_LINE),1)
+				s3=romfile.getdata(pos-romfile.pointer)
+	
+				'is default value a NULL string?
+				if len(s3)=1 and s3="^" then
+					s3=""
+				end if
+				
+				'OK, set this default value
+				for j=0 to MAX_NUM_JOBS	
+					
+					nro_tarea = j
+					
+					if sdr(f).name = TAREA_NUMERO then
+	'					'S3 = j+30
+						S3 = stri(j)
+					end if
+
+					x=setting_sg(sdr(f).name,f2,s3,EN_STG_SET)
+					
+					if x<>EN_STG_STATUS_OK then
+						settings_restore_def=x
+						exit function
+					end if
+					
+				next j					
+			end if
+		next f2
+	next f
+
+	'all OK!
+	settings_restore_def=EN_STG_STATUS_OK
+end function
+sub setValue ( value as word, variable as string )
+	dim aux as byte
+
+	if variable = TOTAL_ETIQUETAS then'Esta es la que funcion󍊧	if stg_name = "TN" then	
+		aux = nro_tarea
+		nro_tarea = 0
+	end if
+
+	setting_sg(variable,0,stri(value),EN_STG_SET)
+
+	if variable = TOTAL_ETIQUETAS then'Esta es la que funcion󍊧	if stg_name = "TN" then	
+		nro_tarea = aux
+	end if
+end sub
+function getValue ( variable as string ) as word
+	dim value as string
+	dim aux as byte
+
+	if variable = TOTAL_ETIQUETAS then'Esta es la que funcion󍊧	if stg_name = "TN" then	
+		aux = nro_tarea
+		nro_tarea = 0
+	end if
+
+	setting_sg(variable,0,value,EN_STG_GET)
+	getValue = val(value)
+	
+	if variable = TOTAL_ETIQUETAS then'Esta es la que funcion󍊧	if stg_name = "TN" then	
+		nro_tarea = aux
+	end if
+end function
+public function setting_sg(byref stg_name as string, index as byte, byref stg_value as string, op as en_stg_rdwr) as en_stg_status
+'Reads/writes setting stg_name, value is exchanged through stg_value. Read or write operation is
+'determined by op. Returns various en_stg_status status codes.
+	
+	dim x,cs as byte
+	dim i as word
+'	dim s as string(64)
+	dim stg_str as string(32)
+'	dim s3 as string(4)
+	dim num as byte
+
+	if stg_name = TAREA_NUMERO and op=EN_STG_SET then'Esta es la que funcion󍊧	if stg_name = "TN" then	
+		nro_tarea = val(stg_value)
+	end if
+
+	if stg_name = PRIMER_ENCENDIDO then'Esta es la que funcion󍊧	if stg_name = "TN" then	
+		nro_tarea = 0
+	end if
+	
+	'nro_tarea = val(stor.getdata(2018,1))
+
+	'does this setting exist?
+	num=setting_find(stg_name)
+	if num=0 then
+		'unknown setting
+		setting_sg=EN_STG_STATUS_UNKNOWN
+		exit function
+	end if
+	num=num-1
+
+	'is index valid?
+	if index>=sdr(num).members then
+		'invalid index
+		setting_sg=EN_STG_STATUS_INVALID_INDEX
+		exit function
+	end if
+
+
+	'is this a read or a write?
+	if op=EN_STG_GET then
+
+		'Read! Branch according to the setting type
+		select case chr(sdr(num).stype)
+		case "B":	'byte (takes 2 bytes in storage- 1 byte of data and checksum)
+			x=2
+		case "W":	'word (takes 3 bytes in storage- 2 bytes of data and checksum)
+			x=3
+		case else:	'string or dot-decimal string (takes max_len + 2 bytes in storage- len and cs)
+			x=asc(stor.getdata((nro_tarea*150)+sdr(num).eeaddr,1))+2
+		end select		
+		
+		'now x contains the number of bytes to read. Read, calc checksum, verify it
+		stg_str=stor.getdata((nro_tarea*150)+sdr(num).eeaddr+sdr(num).member_size*index,x)
+		cs=strsum(left(stg_str,len(stg_str)-1))
+		if cs<>asc(right(stg_str,1)) then
+			setting_sg=EN_STG_STATUS_FAILURE	'invalid checksum
+			exit function
+		end if
+		
+		'checksum OK, make sure this setting has a valid value
+		select case chr(sdr(num).stype)
+		case "B":	'byte- convert into value
+			i=asc(left(stg_str,1))
+			stg_value=str(i)
+			goto l1
+						
+		case "W":	'word- convert into value
+			stg_str=left(stg_str,2)
+			i=asc(left(stg_str,1))*256+asc(mid(stg_str,2,1))
+			stg_value=str(i)
+			goto l1
+
+		case "S":	'string- take length
+			stg_value=mid(stg_str,2,asc(left(stg_str,1)))
+			i=asc(left(stg_str,1))
+			goto l1
+					
+		case else:	'dot-decimal string- take length
+			stg_value=ddstr(mid(stg_str,2,asc(left(stg_str,1))))
+			i=asc(left(stg_str,1))
+l1:			if i<sdr(num).p1 or i>sdr(num).p2 then
+				setting_sg=EN_STG_STATUS_INVALID	'invalid checksum
+				exit function
+			end if
+		end select		
+
+		'OK, so this setting's value is OK and the stg_value is already set to it!
+		setting_sg=EN_STG_STATUS_OK
+		exit function
+	
+	else
+		'Write! Branch according to the setting type and verify new value
+		select case chr(sdr(num).stype)
+		case "B":	'byte- convert into value
+			i=val(stg_value)
+			stg_str=chr(i)         
+			goto l2
+						
+		case "W":	'word- convert into value
+			i=val(stg_value)
+			x=i/256
+			stg_str=chr(x)+chr(i-x*256)
+			goto l2
+
+		case "S":	'string
+			stg_str=chr(len(stg_value))+stg_value
+			i=len(stg_str)-1
+			goto l2
+					
+		case else:	'dot-decimal string- take length
+			stg_str=ddval(stg_value)
+			stg_str=chr(len(stg_str))+stg_str
+			i=len(stg_str)-1
+			
+			
+l2:		if i<sdr(num).p1 or i>sdr(num).p2 then
+				setting_sg=EN_STG_STATUS_INVALID	'invalid checksum
+				exit function
+			end if
+		end select		
+		
+		'calculate checksum and add this checksum to the data
+		cs=strsum(stg_str)
+		stg_str=stg_str+chr(cs)
+		
+		'store the data into the EEPROM
+		if stor.setdata(stg_str,(nro_tarea*150)+sdr(num).eeaddr+sdr(num).member_size*index)<>len(stg_str) then
+			'EEPROM write failure!
+			setting_sg=EN_STG_STATUS_FAILURE
+			exit function
+		end if
+		
+	end if
+
+	'completed successfully!
+	setting_sg=EN_STG_STATUS_OK
+end function
+public function setting_find(byref stg_name as string(2)) as byte
+'finds setting by name in the sdr structure, returns member number+1
+'if found, or 0 if not found.
+
+	dim f as byte
+
+	for f=0 to num_stg-1
+		if sdr(f).name=stg_name then
+			setting_find=f+1
+			exit function
+		end if
+
+	next f
+	setting_find=0
+end function

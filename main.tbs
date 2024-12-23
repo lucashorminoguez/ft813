@@ -1,26 +1,33 @@
 include "global.tbh"
 include "display\FT8xx.tbh"
 include "display\API_Layer.tbh"
-#DEFINE COLORCUADRO  &H3300FF
+include "settings.tbh"
 
 sub on_sys_init()
-	FT813_init() 
-	'ENTRADA DEL BUZZER 
+
+'ENTRADA DEL BUZZER 
 	io.num=PL_IO_NUM_45_CO
 	io.enabled=YES
 	io.lineset(PL_IO_NUM_45_CO,HIGH)
 	beep.divider = BEEP_DIV
-	beep.play("*--B-B---B---B---B---B-B",PL_BEEP_NOINT)
+	beep.play("*-",PL_BEEP_NOINT)
 	beep.divider = BEEP_DIV
+DisaplyAPI_Init() 'PRENDO EL DISPLAY
+DisplayAPI_FONDO(&h66CCFF)   'INICIALIZO PANTALLA Y PONGO FONDO CELESTE 
+DisplayAPI_WriteText(COLORCUADRO,255,420,270,31,512,"Cargando...",4)
+displayapi_spinner(400,180, 0, 0) 
+DisplayAPI_EndScreen() ' TERMINO MI PANTALLA 
+'-------- SET UP TIMER SYS ---------
+settings_init()
+sys.onsystimerperiod=1
 '====================================================================
+
+
+
+
 '--------------------------- INIT TOUCHSCREEN ------------------------------
-	DisaplyAPI_Init() 'PRENDO EL DISPLAY
-	DisplayAPI_FONDO(&h66CCFF)   'INICIALIZO PANTALLA Y PONGO FONDO CELESTE 
-	DisplayAPI_WriteText(COLORCUADRO,255,400,70,31,512,"DISPLAY FT813",0)
-	DisplayAPI_Button (COLORCUADRO,255,350,250,190,90,31,512,"BOTON",0)
-	
-	DisplayAPI_EndScreen() ' TERMINO MI PANTALLA 
+	UI_Home()
 	end sub 
-	sub main ()
-		
+	sub on_sys_timer()
+	UI_display()
 	end sub

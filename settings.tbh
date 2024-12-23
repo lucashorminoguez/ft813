@@ -1,0 +1,73 @@
+#ifndef __SETTINGS__
+#define __SETTINGS__
+
+'=============================================================
+'		SETTINGS.TBS
+'=============================================================
+#define MAX_NUM_JOBS			(6) - 1
+
+
+#define PRIMER_ENCENDIDO						"PE"
+#define TAREA_NUMERO							"TN"
+
+#define TOTAL_ETIQUETAS							"TE"
+
+#define DELAY_CICLO								"DC"
+
+#define RETARDO_ASSIST							"RA"
+#define DURACION_ASSIST							"DA"
+
+#define RETARDO_VACIO							"RV"
+#define DURACION_VACIO							"DV"
+
+#define RETARDO_TAMP							"RT"
+#define PLANCHADO_TAMP							"PT"
+#define DURACION_TAMP							"DT"
+
+#define RETARDO_BLOW							"RB"
+#define DURACION_BLOW							"DB"
+#define REPETITIVO_BLOW							"BR"
+
+#define DURACION_READY							"DR"
+
+#define ORDEN_CICLO								"OC"
+#define FLANCO_S_PRODUCTO						"FS"
+
+#define ETIQUETAS_PARCIALES						"EP"
+#define DISPENSADAS_PARCIALES					"DP"
+
+#define DIRECCION_IP_0							"I0"
+#define DIRECCION_IP_1							"I1"
+#define DIRECCION_IP_2							"I2"
+#define DIRECCION_IP_3							"I3"
+
+#define MASCARA_IP_0							"M0"
+#define MASCARA_IP_1							"M1"
+#define MASCARA_IP_2							"M2"
+#define MASCARA_IP_3							"M3"
+
+#define PUERTO_IP								"PU"
+
+#define HABILITACION_ETHERNET					"HE"
+
+#define INHIBIR_IMPRESORA						"II"
+
+'Status codes for setting-related operations
+enum en_stg_status	
+	EN_STG_STATUS_OK,				'Operation completed successfully
+	EN_STG_STATUS_UNKNOWN,			'Unknown setting (mnemonic not recognized)
+	EN_STG_STATUS_INVALID_INDEX,	'Invalid index (out-of-range)
+	EN_STG_STATUS_FAILURE,			'Read failure (checksum error) or write failure (EEPROM trouble)
+	EN_STG_STATUS_INVALID			'Invalid setting value
+end enum
+
+declare sub settings_init()
+declare function settings_restore_def(init_field_override as no_yes) as en_stg_status
+declare sub setValue ( value as word, variable as string )
+declare function getValue ( variable as string ) as word
+enum en_stg_rdwr
+	EN_STG_GET,			'Read operation
+	EN_STG_SET			'Write operation
+end enum
+
+#endif

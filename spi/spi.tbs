@@ -1,8 +1,6 @@
 include "spi.tbh"
 
-
 'FUNCIONES-----------------------------------------------------------
-
 sub init_SPI()
 	io.num = SPI_PD
 	io.enabled = yes
@@ -12,9 +10,8 @@ sub init_SPI()
 	io.enabled = YES
 	io.num = SPI_CS
 	io.enabled = YES
-	
-	ssi.channel = 1
-	ssi.enabled = NO
+	ssi.channel = 1						
+	ssi.enabled = NO						
 	ssi.direction = PL_SSI_DIRECTION_LEFT
 	ssi.clkmap = SPI_CLK
 	ssi.zmode = PL_SSI_ZMODE_ENABLED_ON_ZERO
@@ -23,7 +20,6 @@ sub init_SPI()
 	ssi.baudrate = PL_SSI_BAUD_1MHz
 	ssi.mode = PL_SSI_MODE_0
 	ssi.zmode =	PL_SSI_ZMODE_ALWAYS_ENABLED
-	
 	ssi.enabled = YES
 end sub
 

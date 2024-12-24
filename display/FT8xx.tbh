@@ -1,9 +1,14 @@
-#ifndef __FT8xx__
-#define __FT8xx__
+#ifndef __FT8xx__          'Evito recursividad 
 
+'INCLUDES------------------------------------------------------------
+
+include "spi/spi.tbh"
+
+'DEFINES-------------------------------------------------------------
+
+#define __FT8xx__
 #define MEM_WRITE 				&h80
 #define MEM_READ 				&h00
-
 #define RAM_G 					&h000000
 #define RAM_G_END				&h0FFFFF
 #define ROM_FONT	 			&h1E0000
@@ -16,7 +21,6 @@
 #define RAM_REG_END				&h302FFF
 #define RAM_CMD 				&h308000
 #define RAM_CMD_END				&h308FFF
-
 #define REG_ID                	&h302000
 #define REG_FRAMES            	&h302004
 #define REG_CLOCK             	&h302008
@@ -132,7 +136,6 @@
 #define BORDER					&h00000000
 #define LINE_STRIP				&h00000004
 #define RECTS					&h00000009
-
 #define CMD_DLSTART				&hFFFFFF00
 #define CMD_SWAP				&hFFFFFF01
 #define CMD_BGCOLOR				&hFFFFFF09
@@ -151,7 +154,6 @@
 #define CMD_LOADIMAGE			&hFFFFFF24
 #define CMD_GETPROPS			&hFFFFFF25
 #define CMD_TRACK				&hFFFFFF2C
-
 #define TAG_MASK				&h14000000
 #define TAG 					&h03000000
 #define COLOR_RGB 				&h04000000
@@ -177,9 +179,7 @@
 #define SCISSOR_XY				&h1B000000
 #define SCISSOR_SIZE			&h1C000000
 
-
-
-
+'DECLARATIONS--------------------------------------------------------
 
 declare function FT813_init() as word
 declare sub displaySPIDeselect()
@@ -203,8 +203,6 @@ declare sub EVE_CmdWrite(EVECmd as byte, Param as byte)
 declare function EVE_IncCMDOffset(currentOffset as word, commandSize as word) as word
 declare function EVE_GetCurrentWritePointer() as word
 declare function EVE_CheckFreeSpace(CmdOffset as word) as word
-
-
 
 declare function tagMask(mask as byte) as dword
 declare function tagWrite( s as byte ) as dword

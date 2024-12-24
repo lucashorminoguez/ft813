@@ -1,5 +1,28 @@
-#ifndef __API_LAYER__
+#ifndef __API_LAYER__                      'ESTA LINEA EVITA LA RECURSIVIDAD 
+
+'INCLUDES------------------------------------------------------------
+
+include "Display\FT8xx.tbh"
+
+'DEFINES-------------------------------------------------------------
+
 #define __API_LAYER__
+#define COLORCUADRO  &H3300FF
+#define tagboton 1
+#define tagATRAS 2
+#define SCREEN_PRESSED					0
+#define SCREEN_RELEASED					1
+#define SCREEN_UNPRESSED				2
+#define CARGAR_VALORES					&h80
+#define GUARDAR_VALORES					&h40
+#define RECARGAR_VALORES				&hC0
+#define VALORES_PANTALLA				&h3F
+#define FLAGS_PANTALLA					&hC0
+#define PANTALLA_HOME					0
+#define PANTALLA_ENTRADAS				4
+
+'DECLARATIONS--------------------------------------------------------
+
 declare sub DisplayAPI_DeleteTags ()           
 declare sub DisaplyAPI_Init()                             'ARRANCA EL DISPLAY
 declare sub DisplayAPI_FONDODEGRADE (byval color1 as dword, byval color2 as dword) 'inicializa una nueva pantalla con degrade
@@ -46,23 +69,11 @@ declare function UI_goToScreen(byval tagValue as byte) as byte
 declare sub UI_reenviarPantalla()
 declare sub UI_guardarValores()
 declare sub UI_cargarValores()
-#define tagboton 1
-#DEFINE tagATRAS 2
 declare function getScreenState as byte
-#define SCREEN_PRESSED		0
-#define SCREEN_RELEASED		1
-#define SCREEN_UNPRESSED	2
-#define CARGAR_VALORES					&h80
-#define GUARDAR_VALORES					&h40
-#define RECARGAR_VALORES				&hC0
-#define VALORES_PANTALLA				&h3F
-#define FLAGS_PANTALLA					&hC0
 declare function UI_showMessage(byref message as string) as no_yes
-#define PANTALLA_ENTRADAS				4
-#endif
 declare sub UI_Estados (byval cantidadEntradas as byte, byref entrada(10) as string, byref entradaValue(10) as word)
-#define PANTALLA_HOME					0
 declare sub UI_display()
-#DEFINE COLORCUADRO  &H3300FF
 declare sub UI_Home()
-DECLARE sub UI_Second
+declare sub UI_Second
+declare sub UI_carga
+#endif

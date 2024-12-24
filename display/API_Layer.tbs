@@ -1,5 +1,9 @@
-include "Display\FT8xx.tbh"
+'INCLUDES------------------------------------------------------------
+
 include "display\API_Layer.tbh"
+
+'DECLARATIONS--------------------------------------------------------
+
 dim entradaValue(10) as word
 dim screenState as byte
 dim tagAnterior as byte
@@ -14,12 +18,12 @@ dim pantallaAGuardar as byte
 dim pantallaActualIndex as byte
 dim tag as byte
 dim imgAddress as dword
-
 declare function DisplayAPI_SendString(byref texto as string) as byte
-
 dim cmdOffset as word
 dim touch as byte
 dim tagEnabled as no_yes = YES
+
+'FUNCIONES-----------------------------------------------------------
 
 sub DisaplyAPI_Init()
 	FT813_init()
@@ -56,7 +60,7 @@ sub DisplayAPI_FONDODEGRADE(byval colorStart as dword, byval colorEnd as dword)
     SCREEN_HEIGHT = 7680
     dim steps as dword
     steps = 50  ' Número de pasos del gradiente
-    
+   
     dim i as dword
     dim rStart, gStart, bStart as dword
     dim rEnd, gEnd, bEnd as dword
@@ -332,7 +336,7 @@ sub DisplayAPI_Toggle (byval color as dword, byval alpha as byte, byval x as wor
         EVE_Write32( TAG_MASK + 1 )										' Enable tagging
         EVE_Write32( tagWrite( etiqueta ) )										' tagWrite
         cmdOffset = EVE_IncCMDOffset( cmdOffset, 8)
-	end if
+end if
     
     '--------------------------- Para la letra -----------------------------
     EVE_Write32( colorRGB( &hD9D9D9 ) )							' colorRGB
@@ -530,9 +534,12 @@ sub DisplayAPI_Coordinates ()
 end sub
 sub DisplayAPI_LoadImage(byval ptr as byte, byval options as byte)
     EVE_Write32(CMD_LOADIMAGE)  ' Escribe el comando en el buffer de comandos
-	EVE_Write32(ptr)     ' Especifica la dirección de la imagen en la memoria
-	EVE_Write32(options)        ' Define opciones para la carga de la imagen
-    cmdOffset = EVE_IncCMDOffset(cmdOffset, 12)
+	cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
+	EVE_Write32(ptr)     ' Especifica la dirección de la imagen en la memoria tiene que durar 4 byte
+	cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
+	EVE_Write32(options)        ' Define opciones para la carga de la imagen tiene que durar 4 byte
+    cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
+	
 end sub
 sub DisplayAPI_GetProps( byval ptr as dword, byval w as dword, byval h as dword)
     EVE_Write32( CMD_GETPROPS )
@@ -630,7 +637,6 @@ function UI_ReadDisplayTag () as byte
 		UI_ReadDisplayTag = 0
 		exit function
 	end if
-	
 '	if modoMensajeInformativo = messageTimed then
 '		if timeMensajeInformativo > 0 then
 '			timeMensajeInformativo = timeMensajeInformativo - 1
@@ -643,7 +649,6 @@ function UI_ReadDisplayTag () as byte
     	tagLeido = displayAPI_ReadTag()
 		displayInUse = false
  '   end if
-	
 	if tagLeido <> 0 and tagLeido <> 255 then
 		UI_ReadDisplayTag = 0
         screenState = SCREEN_PRESSED
@@ -680,8 +685,7 @@ function UI_goToScreen(byval tagValue as byte) as byte
 		case tagATRAS:
 		UI_Home()
 		case else:
-			sys.reboot()
-		
+		sys.reboot()	
 	end select 
 end function 
 function UI_refreshInputs() as boolean
@@ -742,7 +746,6 @@ sub UI_cargarValores()
 		pantallaActual = pantallaActual - CARGAR_VALORES
 		select case pantalla
 			case PANTALLA_ENTRADAS:
-			
 '			case PANTALLA_SALIDAS:
 			case else:
 				sys.reboot()
@@ -770,19 +773,29 @@ sub UI_Home ()
 	while displayInUse = true
 	wend
 	displayInUse = true
-	DisplayAPI_FONDO(&h66CCFF)   'INICIALIZO PANTALLA Y PONGO FONDO CELESTE 
+	DisplayAPI_FONDO(&h66CCFF)   	'INICIALIZO PANTALLA Y PONGO FONDO CELESTE 
 	DisplayAPI_WriteText(COLORCUADRO,255,400,70,31,512,"DISPLAY FT813",0)
 	DisplayAPI_Button (COLORCUADRO,255,350,250,190,90,31,512,"BOTON",tagboton)
-	DisplayAPI_EndScreen() ' TERMINO MI PANTALLA 
+	DisplayAPI_EndScreen() 		 	'TERMINO MI PANTALLA 
 	displayInUse = false
 end sub
 sub UI_SECOND ()
 	while displayInUse = true
 	wend
 	displayInUse = true
-	DisplayAPI_FONDO(&hff33FF)   'INICIALIZO PANTALLA Y PONGO FONDO VIOLETA
+	DisplayAPI_FONDO(&hff33FF)   	'INICIALIZO PANTALLA Y PONGO FONDO VIOLETA
 	DisplayAPI_WriteText(&hffccff,255,400,70,31,512,"Para volver presione ATRAS",0)
 	DisplayAPI_Button (COLORCUADRO,255,350,250,190,90,31,512,"ATRAS",tagATRAS)
-	DisplayAPI_EndScreen() ' TERMINO MI PANTALLA 
+	DisplayAPI_EndScreen() 			'TERMINO MI PANTALLA 
 	displayInUse = false
 end sub
+sub UI_CARGA()
+while displayInUse = true
+	wend
+	displayInUse = true
+	DisplayAPI_FONDO(&h66CCFF)   			'INICIALIZO PANTALLA Y PONGO FONDO CELESTE
+	DisplayAPI_WriteText(COLORCUADRO,255,420,270,31,512,"Cargando...",4)
+	displayapi_spinner(400,180, 0, 0) 		'Rueda de carga 
+	DisplayAPI_EndScreen() 			'TERMINO MI PANTALLA 
+	displayInUse = false
+end sub 

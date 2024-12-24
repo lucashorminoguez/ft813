@@ -1,6 +1,9 @@
+'INCLUDES------------------------------------------------------------
+include "display\FT8xx.tbh"
+include "display\API_Layer.tbh"
+include "settings.tbh"
+
 'DEFINES-------------------------------------------------------------
 #define	BEEP_DIV					14000' llevar cerca de 20000
-'INCLUDES------------------------------------------------------------
 
-'DECLARATIONS--------------------------------------------------------
-DIM COLORCUADRO AS Dword 
+'DECLARATIONS-------------------------------------------------------- 

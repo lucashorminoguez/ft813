@@ -1,4 +1,3 @@
-include "spi/spi.tbh"
 include "FT8xx.tbh"
 
 'dim displaySSPIPort as byte

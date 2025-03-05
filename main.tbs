@@ -10,7 +10,7 @@ io.lineset(PL_IO_NUM_45_CO,HIGH)  		'pongo un alto en el pin
 beep.divider = BEEP_DIV           		'Establezco freq del zumbador
 beep.play("*-",PL_BEEP_NOINT)      		'patron del buzzer
 DisaplyAPI_Init() 						'PRENDO EL backlight
-UI_CARGA()
+'UI_CARGA()
 '-------- SET UP TIMER SYS ---------
 settings_init()							'configuracion necesaria del timer 
 sys.onsystimerperiod=1					'config periodo del timer  	
@@ -18,7 +18,7 @@ sys.onsystimerperiod=1					'config periodo del timer
 
 '===================================================================
 '------------------------ INIT TOUCHSCREEN -------------------------
-
+cargar_color_solido()
 UI_Home()                            'PANTALLA DEL MENU INICIAL 
 end sub 							
 

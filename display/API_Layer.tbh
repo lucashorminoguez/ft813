@@ -9,6 +9,9 @@ include "Display\FT8xx.tbh"
 #define __API_LAYER__
 #define COLORCUADRO  &H3300FF
 #define tagboton 1
+#define tagboton2 3
+#define tagboton3 4
+#define tagboton4 5
 #define tagATRAS 2
 #define SCREEN_PRESSED					0
 #define SCREEN_RELEASED					1
@@ -22,7 +25,10 @@ include "Display\FT8xx.tbh"
 #define PANTALLA_ENTRADAS				4
 
 'DECLARATIONS--------------------------------------------------------
-
+declare sub mostrar_imagen(byval x as word, byval y as word)
+declare sub cargar_imagen()
+declare sub mostrar_color_solido(byval x as word, byval y as word)
+declare sub cargar_color_solido()
 declare sub DisplayAPI_DeleteTags ()           
 declare sub DisaplyAPI_Init()                             'ARRANCA EL DISPLAY
 declare sub DisplayAPI_FONDODEGRADE (byval color1 as dword, byval color2 as dword) 'inicializa una nueva pantalla con degrade
@@ -46,7 +52,7 @@ declare sub DisplayAPI_Scroll( byval alpha as byte, byval x as word, byval y as 
 declare sub DisplayAPI_Spinner( byval x as word, byval y as word, byval style as word, byval scale as word)
 declare sub DisplayAPI_Coordinates ()
 declare sub DisplayAPI_Tag ()
-declare sub DisplayAPI_LoadImage( byval ptr as byte, byval options as byte)
+declare sub DisplayAPI_LoadImage( byval ptr as dword, byval options as byte)
 declare sub DisplayAPI_GetProps( byval ptr as dword, byval w as dword, byval h as dword)
 declare sub DisplayAPI_BitmapHandle( byval handle as byte)
 declare sub DisplayAPI_BitmapSource( byval addr as dword )

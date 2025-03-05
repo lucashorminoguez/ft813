@@ -1,6 +1,7 @@
 'INCLUDES------------------------------------------------------------
 
 include "display\API_Layer.tbh"
+include "logo.tbh"
 
 'DECLARATIONS--------------------------------------------------------
 
@@ -532,14 +533,13 @@ end sub
 sub DisplayAPI_Coordinates ()
     touch = EVE_MemRead32( REG_TOUCH_SCREEN_XY )
 end sub
-sub DisplayAPI_LoadImage(byval ptr as byte, byval options as byte)
+sub DisplayAPI_LoadImage(byval ptr as dword, byval options as byte)
     EVE_Write32(CMD_LOADIMAGE)  ' Escribe el comando en el buffer de comandos
 	cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
 	EVE_Write32(ptr)     ' Especifica la dirección de la imagen en la memoria tiene que durar 4 byte
 	cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
 	EVE_Write32(options)        ' Define opciones para la carga de la imagen tiene que durar 4 byte
     cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
-	
 end sub
 sub DisplayAPI_GetProps( byval ptr as dword, byval w as dword, byval h as dword)
     EVE_Write32( CMD_GETPROPS )
@@ -682,12 +682,166 @@ function UI_goToScreen(byval tagValue as byte) as byte
 	select case tagValue
 		case tagboton:
 		UI_SECOND()
+		case tagboton2:
+		
 		case tagATRAS:
 		UI_Home()
 		case else:
 		sys.reboot()	
 	end select 
 end function 
+
+
+
+
+dim logo_data(8192) as byte  ' 64x64 píxeles x 2 bytes por píxel = 8,192 bytes
+
+sub inicializar_logo()
+    dim i as word
+    for i = 0 to 8191 step 2  ' 64x64 píxeles x 2 bytes por píxel
+        logo_data(i) = &h7F   ' Byte bajo (azul y parte del verde)
+        logo_data(i + 1) = &h66  ' Byte alto (rojo y parte del verde)
+    next i
+end sub
+'sub inicializar_logo()
+'    ' Llenar el array con los datos de la imagen
+'    logo_data(0) = &hFF33ff
+'	logo_data(1) = &h00
+'	logo_data(2) = &hFF33ff
+'	logo_data(3) = &hFF33ff
+'    logo_data(4) = &h00
+'	logo_data(5) = &h00
+'	logo_data(6) = &hFF33ff
+'	logo_data(7) = &hFF33ff
+'    logo_data(8) = &h00
+'	logo_data(9) = &h00
+'	logo_data(10) = &hFF33ff
+'	logo_data(11) = &hFF33ff
+'    logo_data(12) = &h00
+'	logo_data(13) = &h00
+'	logo_data(14) = &hFF33ff
+'	logo_data(15) = &hFF33ff
+'    logo_data(16) = &hFF33ff
+'	logo_data(17) = &hFF33ff
+'	logo_data(18) = &h00
+'	logo_data(19) = &h00
+'    logo_data(20) = &hFF33ff
+'	logo_data(21) = &hFF33ff
+'	logo_data(22) = &h00: logo_data(23) = &h00
+'    logo_data(24) = &hFF: logo_data(25) = &hFF: logo_data(26) = &h00: logo_data(27) = &h00
+'    logo_data(28) = &hFF: logo_data(29) = &hFF: logo_data(30) = &h00: logo_data(31) = &h00
+'    ' ... (continúa llenando el array con los datos de la imagen)
+'end sub
+sub DisplayAPI_DrawBitmap(byval ptr as dword, byval x as word, byval y as word, byval width as word, byval height as word)
+    ' Configurar el manejador de la imagen
+    EVE_Write32(bitmapHandle(0))  ' Usar el manejador 0
+    cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
+
+    ' Especificar la fuente de la imagen
+    EVE_Write32(bitmapSource(ptr))  ' Usar la dirección de la imagen
+    cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
+
+    ' Especificar el formato y layout de la imagen
+    EVE_Write32(bitmapLayout(RGB565, width * 2, height))  ' RGB565, stride=width*2, height
+    cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
+
+    ' Especificar el tamaño en pantalla
+    EVE_Write32(bitmapSize(NEAREST, BORDER, BORDER, width, height))  ' Sin escalado
+    cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
+
+    ' Dibujar la imagen
+    EVE_Write32(begin(BITMAPS))
+    cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
+    EVE_Write32(vertex2ii(x, y, 0, 0))  ' Dibujar en (x, y) con el manejador 0
+    cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
+end sub
+
+'sub cargar_imagen()
+'    dim ptr as dword
+'    dim i as dword
+'    ptr = RAM_G  ' Usar la dirección base de RAM_G
+'	'EVE_WaitCmdFifoEmpty()												' Await completion of processing 
+'	'EVE_Write32( clear( 1, 1, 1 ) )				
+'    'displaySPISelect()													' CS low begins SPI transaction 
+'    'EVE_AddrForWr( RAM_G)								' Send address for writing as the next free location in the co-pro buffer
+'    ' Escribir datos de la imagen desde logo_data a RAM_G
+'    for i = 0 to 31  ' 8x8 píxeles x 2 bytes por píxel = 128 bytes
+'        EVE_MemWrite32(ptr, logo_data(i))  ' Escribir cada byte en RAM_G
+'    next i
+'    ' Forzar sincronización
+'    'EVE_WaitCmdFifoEmpty()
+'end sub
+sub mostrar_color_solido(byval x as word, byval y as word)
+    dim ptr as dword
+    ptr = RAM_G  ' Dirección de la imagen en RAM_G
+
+    ' Iniciar display list
+    EVE_Write32(CMD_DLSTART)
+    
+    ' Configurar el manejador de la imagen
+    EVE_Write32(bitmapHandle(0))
+    
+    ' Especificar la fuente de la imagen en RAM_G
+    EVE_Write32(bitmapSource(ptr))
+
+    ' Especificar formato y tamaño de la imagen correctamente
+    EVE_Write32(bitmapLayout(RGB565, 128, 64))  ' 64 píxeles * 2 bytes por píxel
+    EVE_Write32(bitmapSize(NEAREST, BORDER, BORDER, 64, 64))  ' Tamaño 64x64
+
+    ' Dibujar la imagen en pantalla
+    EVE_Write32(begin(BITMAPS))
+    EVE_Write32(vertex2ii(x, y, 0, 0))
+    
+    ' Finalizar display list y actualizar
+    EVE_Write32(DISPLAY)
+    EVE_Write32(CMD_SWAP)
+    EVE_WaitCmdFifoEmpty()
+end sub
+
+
+sub cargar_color_solido()
+    dim i as dword
+	dim color as word
+    color = &hF800  ' Rojo en formato RGB565
+	DisplayAPI_loadimage(RAM_G,0)
+    ' Escribir el color en un bloque de memoria en RAM_G
+    for i = 0 to (8192) step 2  ' 64x64 píxeles * 2 bytes por píxel
+        EVE_MemWrite16(RAM_G + i, color)
+    next i
+	     EVE_WaitCmdFifoEmpty()
+end sub
+
+sub mostrar_imagen(byval x as word, byval y as word)
+    dim ptr as dword
+	dim i as dword
+    ptr = RAM_G  ' Dirección de la imagen en RAM_G
+    ' Configurar el manejador de la imagen
+    EVE_Write32(bitmapHandle(0))  ' Usar el manejador 0
+    cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
+
+    ' Especificar la fuente de la imagen
+    EVE_Write32(bitmapSource(ptr))  ' Usar la dirección de la imagen
+    cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
+
+    ' Especificar el formato y layout de la imagen
+    EVE_Write32(bitmapLayout(RGB565,127,64))  ' RGB565, stride=16 bytes, height=8
+    cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
+
+    ' Especificar el tamaño en pantalla
+    EVE_Write32(bitmapSize(NEAREST, BORDER, BORDER,64,64))  ' Sin escalado
+    cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
+
+    ' Dibujar la imagen
+    EVE_Write32(begin(BITMAPS))
+    cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
+    EVE_Write32(vertex2f(x,y))  ' Dibujar en (x, y) con el manejador 0
+    cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
+end sub
+
+
+
+
+
 function UI_refreshInputs() as boolean
 	UI_refreshInputs = false
 	
@@ -769,15 +923,29 @@ function UI_showMessage(byref message as string) as no_yes
 	end if
 	UI_showMessage = mensajeInformativoPendiente
 end function
-sub UI_Home ()
-	while displayInUse = true
-	wend
-	displayInUse = true
-	DisplayAPI_FONDO(&h66CCFF)   	'INICIALIZO PANTALLA Y PONGO FONDO CELESTE 
-	DisplayAPI_WriteText(COLORCUADRO,255,400,70,31,512,"DISPLAY FT813",0)
-	DisplayAPI_Button (COLORCUADRO,255,350,250,190,90,31,512,"BOTON",tagboton)
-	DisplayAPI_EndScreen() 		 	'TERMINO MI PANTALLA 
-	displayInUse = false
+sub UI_Home()
+    while displayInUse = true
+    wend
+    displayInUse = true
+    ' 1. Inicializar pantalla con fondo celeste
+    DisplayAPI_FONDO(&h66CCFF)
+
+    ' 2. Inicializar, cargar y mostrar el logo de la empresa
+   ' inicializar_logo()  ' Llenar logo_data con datos de prueba
+	'cargar_imagen()     ' Copiar logo_data a RAM_G
+	mostrar_imagen(3000,3000)
+
+    ' 3. Mostrar texto y botones
+    DisplayAPI_WriteText(COLORCUADRO, 255, 400, 70, 31, 512, "IAS-100 TOUCH", 0)
+    DisplayAPI_Button(COLORCUADRO, 255, 20, 350, 175, 90, 31, 512, "IMPRE", tagboton)
+    DisplayAPI_Button(COLORCUADRO, 255, 210, 350, 175, 90, 31, 512, "ALARM", tagboton2)
+    DisplayAPI_Button(COLORCUADRO, 255, 410, 350, 175, 90, 31, 512, "INHABI", tagboton3)
+    DisplayAPI_Button(COLORCUADRO, 255, 610, 350, 175, 90, 31, 512, "CONFIG", tagboton4)
+	'cargar_color_solido()
+    'mostrar_color_solido(100, 50)  ' Mostrar la imagen en (100, 50)
+    ' 4. Finalizar pantalla
+    DisplayAPI_EndScreen()
+    displayInUse = false
 end sub
 sub UI_SECOND ()
 	while displayInUse = true

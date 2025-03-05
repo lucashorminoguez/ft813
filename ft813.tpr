@@ -110,5 +110,6 @@ location=project
 path=logo.tbh
 type=header
 format=65001
+condition=
 locked=no
 location=project

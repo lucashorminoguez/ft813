@@ -27,9 +27,7 @@ include "Display\FT8xx.tbh"
 'DECLARATIONS--------------------------------------------------------
 declare sub mostrar_imagen(byval x as word, byval y as word)
 declare sub cargar_imagen()
-declare sub mostrar_color_solido(byval x as word, byval y as word)
-declare sub cargar_color_solido()
-declare sub DisplayAPI_DeleteTags ()           
+declare sub DisplayAPI_DeleteTags()           
 declare sub DisaplyAPI_Init()                             'ARRANCA EL DISPLAY
 declare sub DisplayAPI_FONDODEGRADE (byval color1 as dword, byval color2 as dword) 'inicializa una nueva pantalla con degrade
 declare sub DisplayAPI_FONDO (byval color as dword)        'inicializa una nueva pantalla con un color de fondo 

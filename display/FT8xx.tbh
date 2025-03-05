@@ -218,7 +218,7 @@ declare function vertex2f( x as word, y as word ) as dword
 declare function vertex2ii( x as word, y as word, handle as byte ,cell as byte ) as dword
 declare function bitmapHandle( handle as byte ) as dword
 declare function bitmapSource( addr as dword ) as dword
-declare function bitmapLayout( format as byte, linestride as word, height as word ) as dword
+declare function bitmapLayout( format as byte, linestride as dword, height as word ) as dword
 declare function bitmapSize( filter as byte, wrapx as byte, wrapy as byte, width as word, height as word ) as dword
 declare function bitmapLayoutH( linestride as byte, height as byte ) as dword
 declare function bitmapSizeH( width as byte, height as byte ) as dword

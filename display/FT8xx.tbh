@@ -134,6 +134,7 @@ include "spi/spi.tbh"
 #define NEAREST					&h00000000
 #define BITMAPS					&h00000001
 #define BORDER					&h00000000
+#define REPEAT					&h00000001
 #define LINE_STRIP				&h00000004
 #define RECTS					&h00000009
 #define CMD_DLSTART				&hFFFFFF00
@@ -218,8 +219,8 @@ declare function vertex2f( x as word, y as word ) as dword
 declare function vertex2ii( x as word, y as word, handle as byte ,cell as byte ) as dword
 declare function bitmapHandle( handle as byte ) as dword
 declare function bitmapSource( addr as dword ) as dword
-declare function bitmapLayout( format as byte, linestride as dword, height as word ) as dword
-declare function bitmapSize( filter as byte, wrapx as byte, wrapy as byte, width as word, height as word ) as dword
+declare function bitmapLayout( format as byte, linestride as dword, height as dword ) as dword
+declare function bitmapSize( filter as byte, wrapx as byte, wrapy as byte, width as dword, height as dword ) as dword
 declare function bitmapLayoutH( linestride as byte, height as byte ) as dword
 declare function bitmapSizeH( width as byte, height as byte ) as dword
 declare function bitmapTransformA( a as dword ) as dword

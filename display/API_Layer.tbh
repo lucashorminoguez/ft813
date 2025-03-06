@@ -25,7 +25,7 @@ include "Display\FT8xx.tbh"
 #define PANTALLA_ENTRADAS				4
 
 'DECLARATIONS--------------------------------------------------------
-declare sub mostrar_imagen(byval x as word, byval y as word)
+declare sub mostrar_imagen(byval x as word, byval y as word, direc as dword, resize as word)
 declare sub cargar_imagen()
 declare sub DisplayAPI_DeleteTags()           
 declare sub DisaplyAPI_Init()                             'ARRANCA EL DISPLAY

@@ -4,7 +4,7 @@ platform=EM1000
 src_lib_ver=2_01_05
 name=ft813
 output=ft813.tpc
-debug=on
+debug=off
 defines=/dLCD_TYPE=SAMSUNG_S6B0108 /dOBJECT_LCD=LCD_ENABLED /dOBJECT_FD=FD_ENABLED /dOBJECT_KP=KP_ENABLED 
 transport=udp_broadcast
 [address1]
@@ -14,7 +14,7 @@ address=0.36.119.82.145.238
 [address2]
 platform=EM1000
 transport=udp_broadcast
-address=0.36.119.81.161.245
+address=0.36.119.82.145.238
 [file1]
 path=main.tbs
 type=basic
@@ -104,5 +104,11 @@ path=logo.tbh
 type=header
 format=65001
 condition=
+locked=no
+location=project
+[file14]
+path=logo.tbs
+type=basic
+format=65001
 locked=no
 location=project

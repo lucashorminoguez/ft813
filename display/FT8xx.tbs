@@ -356,11 +356,11 @@ function bitmapSource( addr as dword ) as dword
 	bitmapSource = BITMAP_SOURCE or ( addr and &h3FFFFF )
 end function
 
-function bitmapLayout( format as byte, linestride as dword, height as word ) as dword
+function bitmapLayout( format as byte, linestride as dword, height as dword ) as dword
 	bitmapLayout = BITMAP_LAYOUT or ( ( format and &h1F ) shl 19 ) or ( ( linestride and &h3FF ) shl 9 ) or ( height and &h1FF )
 end function
 
-function bitmapSize( filter as byte, wrapx as byte, wrapy as byte, width as word, height as word ) as dword
+function bitmapSize( filter as byte, wrapx as byte, wrapy as byte, width as dword, height as dword ) as dword
 	dim aux as dword
 	aux = filter and &h1
 	aux = ( aux shl 20 ) or ( wrapx  and &h001 )

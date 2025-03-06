@@ -720,7 +720,7 @@ sub cargar_imagen()
 	DisplayAPI_loadimage(RAM_G,0)
     ' Escribir el color en un bloque de memoria en RAM_G
     for i = 0 to (8192) step 1  ' 64x64 píxeles * 2 bytes por píxel
-       EVE_MemWrite16(RAM_G + i*2,array(i))
+       EVE_MemWrite16(RAM_G + i*2,array(i)) ' la ram tiene posiciones de memoria de 32bits 
     next i
 	   EVE_WaitCmdFifoEmpty()
 end sub
@@ -728,16 +728,16 @@ end sub
 sub mostrar_imagen(byval x as word, byval y as word)
     dim ptr as dword
 	dim i as dword
-    ' Configurar el manejador de la imagen
-    EVE_Write32(bitmapHandle(0))  ' Usar el manejador 0
+    ' Configurar el handle de la imagen
+    EVE_Write32(bitmapHandle(0))  ' Handle 0
     cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
 
     ' Especificar la fuente de la imagen
-    EVE_Write32(bitmapSource(RAM_G))  ' Usar la dirección de la imagen
+    EVE_Write32(bitmapSource(RAM_G))  ' Direccion de la imagen
     cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
 
     ' Especificar el formato y layout de la imagen
-    EVE_Write32(bitmapLayout(RGB565,128,64))  ' RGB565, stride=16 bytes, height=8
+    EVE_Write32(bitmapLayout(RGB565,128,64))  ' RGB565, stride = ancho*2, altura = 64
     cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
 
     ' Especificar el tamaño en pantalla
@@ -748,7 +748,7 @@ sub mostrar_imagen(byval x as word, byval y as word)
     EVE_Write32(begin(BITMAPS))
     cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
 	
-    EVE_Write32(vertex2f(x,y))  ' Dibujar en (x, y) con el manejador 0
+    EVE_Write32(vertex2f(x,y))   'Dibujar en (x, y) (PODES USAR vertex2ii() agregando el handle 0 y cell
     cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
 	
 end sub

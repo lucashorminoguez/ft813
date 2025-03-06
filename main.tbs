@@ -17,12 +17,14 @@ sys.onsystimerperiod=1					'config periodo del timer
 
 
 '===================================================================
-'------------------------ INIT TOUCHSCREEN -------------------------
+'------------------------ Configuro carga de Imagen -------------------------
 cargar_imagen()
+
+'------------------------ INIT TOUCHSCREEN -------------------------
+
 UI_Home()                            'PANTALLA DEL MENU INICIAL 
 end sub 							
 
-'===================================================================
 '-------------------SUBRUTINA DE INTERRUP TIMER--------------------
 
 sub on_sys_timer()                    

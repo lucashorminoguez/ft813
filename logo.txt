@@ -1,4 +1,6 @@
-NOTA IMPORTANTE!! Tienen que arrancar con coma y un espacio. Y al finalizar el array borra la ultima coma despues del ultimo dato
+NOTA IMPORTANTE!! 	Tienen que arrancar con coma y un espacio. Al finalizar el array borra la ultima coma despues del ultimo dato.
+					Estan cargados cargados 2 arrays llamados LOGO1 y LOGO2 en formato rgb565 64x64.
+
 
 LOGO1:
 , &hffff, &hffff, &hffff, &hffff, &hffff, &hef9e, &hf79e, &hef7d, &hef9e, &hf77e, &hf77e, &hef7e, &hf77d, &hf77e, &hf77e, &hf77e, &hffff, &hffff, &hffff, &hffff, &hffff, &hffff, &hffff, &hffff, &hffff, &hffff, &hffff, &hf77d, &hf77d, &hf77d, &hef7d, &hef7e, &hef7e, &hef9e, &hf79d, &hef7d, &hf77e, &hf7bf, &hffff, &hffff, &hffff, &hffff, &hffff, &hffff, &hffff, &hffff, &hffff, &hffff, &hffbe, &hf79e, &hf79e, &hf7be, &hf79e, &hf79e, &hf79e, &hf79d, &hf79d, &hef7d, &hf77d, &hffdf, &hffff, &hffff, &hffff, &hffff,

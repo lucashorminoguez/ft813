@@ -99,16 +99,3 @@ format=65001
 condition=
 locked=no
 location=project
-[file13]
-path=logo.tbh
-type=header
-format=65001
-condition=
-locked=no
-location=project
-[file14]
-path=logo.tbs
-type=basic
-format=65001
-locked=no
-location=project

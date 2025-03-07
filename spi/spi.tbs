@@ -17,7 +17,7 @@ sub init_SPI()
 	ssi.zmode = PL_SSI_ZMODE_ENABLED_ON_ZERO
 	ssi.domap = SPI_MOSI
 	ssi.dimap = SPI_MISO
-	ssi.baudrate = PL_SSI_BAUD_1MHz
+	ssi.baudrate = PL_SSI_BAUd_1mhz
 	ssi.mode = PL_SSI_MODE_0
 	ssi.zmode =	PL_SSI_ZMODE_ALWAYS_ENABLED
 	ssi.enabled = YES

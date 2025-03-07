@@ -703,7 +703,7 @@ sub cargar_imagen()
 		array = romfile.getdata(6)
 		romfile.pointer = filePointer+6
 		' la ram tiene posiciones de memoria de 32bits 
-		EVE_MemWrite16(RAM_G + i*2,array or &h8000) 
+		EVE_MemWrite16(RAM_G + i*2,array) 
     next i
 	EVE_WaitCmdFifoEmpty()
 end sub							
@@ -721,13 +721,15 @@ sub mostrar_imagen(byval x as word, byval y as word, direc as dword, resize as w
     ' Especificar el formato y layout de la imagen
     EVE_Write32(bitmapLayout(RGB565,128,64))  ' RGB565, stride = ancho*2, altura = 64
 	cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
+	
 	' Agrando la imagen si es que quiero
 	EVE_Write32(BitmapTransformA(resize))
 	cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
 	EVE_Write32(BitmapTransformE(resize))
 	cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
+	
     ' Especificar el tamaño en pantalla
-    EVE_Write32(bitmapSize(BILINEAR,BORDER,BORDER,128,128))  ' LA primer opcion en 0 es normal border y en 1 repeat se repite la imagen si configuro en layout un tamaño del doble de lo que realmente es
+    EVE_Write32(bitmapSize(BILINEAR,BORDER,BORDER,128,128))  ' LA primer opcion en 0 es normal border y en 1 repeat se repite la imagen si configuro en layout un tamaño del doble de lo que realmente es, el tamaño x e y tiene que coincidir con el de resize si usaste
     cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
 
     ' Dibujar la imagen
@@ -838,7 +840,7 @@ sub UI_Home()
     DisplayAPI_Button(COLORCUADRO, 255, 610, 350, 175, 90, 31, 512, "CONFIG", tagboton4)
 		'2  Desplegar el icono guardado al inicio en RAM_G
 	mostrar_imagen(3000,3000,0,128)
-	mostrar_imagen(6000,3000,8194,128)
+	mostrar_imagen(6000,3000,8192,128)
     ' 4. Finalizar pantalla
     DisplayAPI_EndScreen()
     displayInUse = false

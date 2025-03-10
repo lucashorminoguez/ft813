@@ -7,7 +7,7 @@ include "Display\FT8xx.tbh"
 'DEFINES-------------------------------------------------------------
 
 #define __API_LAYER__
-#define COLORCUADRO  &H3300FF
+#define COLORCUADRO  &hF40009
 #define tagboton 1
 #define tagboton2 3
 #define tagboton3 4
@@ -25,7 +25,7 @@ include "Display\FT8xx.tbh"
 #define PANTALLA_ENTRADAS				4
 
 'DECLARATIONS--------------------------------------------------------
-declare sub mostrar_imagen(byval x as word, byval y as word, direc as dword, resize as word)
+declare sub mostrar_imagen(byval x as word, byval y as word, direc as dword, resizeh as word, resizew as word)
 declare sub cargar_imagen()
 declare sub DisplayAPI_DeleteTags()           
 declare sub DisaplyAPI_Init()                             'ARRANCA EL DISPLAY

@@ -356,7 +356,7 @@ function bitmapSource( addr as dword ) as dword
 	bitmapSource = BITMAP_SOURCE or ( addr and &h3FFFFF )
 end function
 
-function bitmapLayout( format as byte, linestride as dword, height as word ) as dword
+function bitmapLayout( format as byte, linestride as dword, height as dword ) as dword
 	bitmapLayout = BITMAP_LAYOUT or ( ( format and &h1F ) shl 19 ) or ( ( linestride and &h3FF ) shl 9 ) or ( height and &h1FF )
 end function
 

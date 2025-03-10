@@ -113,7 +113,7 @@ sub DisplayAPI_FONDODEGRADE(byval colorStart as dword, byval colorEnd as dword)
     cmdOffset = EVE_IncCMDOffset( cmdOffset, 4)
 end sub
 
-'ESTO ERA PARA UN SOLO FONDO DE PANTALLA QUE HIZO JULI 
+'1 solo fondo 
 sub DisplayAPI_FONDO (byval color as dword)
     EVE_WaitCmdFifoEmpty()												' Await completion of processing 
     displaySPISelect()													' CS low begins SPI transaction 
@@ -691,54 +691,67 @@ function UI_goToScreen(byval tagValue as byte) as byte
 end function 
 
 sub cargar_imagen()
-    dim i as dword
-	dim filePointer as dword
+    dim i as dword 
+	dim puntero as dword = 0
 	dim array as word
-	DisplayAPI_loadimage(RAM_G,0)
+	'DisplayAPI_loadimage(RAM_G,0)
 	romfile.open("logo.txt")
     ' Escribir la imagen en un bloque de memoria en RAM_G
-    for i = 0 to (8192) step 1  ' 64x64 píxeles * cant de logos
-		filePointer = romfile.find32(romfile.pointer, ",", 1 )
-		romfile.pointer = filepointer+2
+    for i = 0 to (73278) step 1  ' 64x64 píxeles * cant de logos
+		puntero = romfile.find32(romfile.pointer32, ",", 1 )
+		romfile.pointer32 = puntero+2
 		array = romfile.getdata(6)
-		romfile.pointer = filePointer+6
+		romfile.pointer32 = puntero+6
 		' la ram tiene posiciones de memoria de 32bits 
 		EVE_MemWrite16(RAM_G + i*2,array) 
     next i
+
 	EVE_WaitCmdFifoEmpty()
 end sub							
 
-sub mostrar_imagen(byval x as word, byval y as word, direc as dword, resize as word)
+sub mostrar_imagen(byval x as word, byval y as word, direc as dword, resizeh as word, resizew as word)
 	dim i as dword
-    ' Configurar el handle de la imagen
+'    ' Configurar el handle de la imagen
     EVE_Write32(bitmapHandle(0))  ' Handle 0
     cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
 
     ' Especificar la fuente de la imagen
     EVE_Write32(bitmapSource(direc))  ' Direccion de la imagen
     cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
+	
 
     ' Especificar el formato y layout de la imagen
-    EVE_Write32(bitmapLayout(RGB565,128,64))  ' RGB565, stride = ancho*2, altura = 64
+	EVE_Write32(&h28000000) 		' BITMAP_LAYOUT_H(0, 0)
+	cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
+    EVE_Write32(bitmaplayout(RGB565,708,207))  ' RGB565, stride = ancho*2, altura = 64
 	cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
 	
 	' Agrando la imagen si es que quiero
-	EVE_Write32(BitmapTransformA(resize))
+	EVE_Write32(BitmapTransformA(resizeh))
 	cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
-	EVE_Write32(BitmapTransformE(resize))
+	EVE_Write32(BitmapTransformE(resizew))
 	cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
 	
     ' Especificar el tamaño en pantalla
-    EVE_Write32(bitmapSize(BILINEAR,BORDER,BORDER,128,128))  ' LA primer opcion en 0 es normal border y en 1 repeat se repite la imagen si configuro en layout un tamaño del doble de lo que realmente es, el tamaño x e y tiene que coincidir con el de resize si usaste
+	EVE_Write32(&H2900000a)			' BITMAP_SIZE_H(2, 2)
+	cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
+    EVE_Write32(bitmapSize(NEAREST,BORDER,BORDER,354,207))  ' LA primer opcion en 0 es normal border y en 1 repeat se repite la imagen si configuro en layout un tamaño del doble de lo que realmente es, el tamaño x e y tiene que coincidir con el de resize si usaste
     cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
 
     ' Dibujar la imagen
     EVE_Write32(begin(BITMAPS))
     cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
-	
-    EVE_Write32(vertex2f(x,y))   'Dibujar en (x, y) (PODES USAR vertex2ii() agregando el handle 0 y cell
+	EVE_Write32(&h09000700)
+	cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
+    EVE_Write32(vertex2F(x,y))   'Dibujar en (x, y) (PODES USAR vertex2ii() agregando el handle 0 y cell
     cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
 	
+	' Retorno al valor predeterminado de tamaño
+	EVE_Write32(BitmapTransformA(256))
+	cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
+	EVE_Write32(BitmapTransformE(256))
+	cmdOffset = EVE_IncCMDOffset(cmdOffset, 4)
+
 end sub
 
 
@@ -831,16 +844,19 @@ sub UI_Home()
     wend
     displayInUse = true
     ' 1. Inicializar pantalla con fondo celeste
-    DisplayAPI_FONDO(&h66CCFF)
+    DisplayAPI_FONDO(&h0080FF)
+	DisplayAPI_Gradient(0, 0,&h808080, 525, 120, &hC0C0C0)
+	
     ' 3. Mostrar texto y botones
-    DisplayAPI_WriteText(COLORCUADRO, 255, 400, 70, 31, 512, "IAS-100 TOUCH", 0)
+	mostrar_imagen(0,0,0,100,100)
+	DisplayAPI_WriteText(COLORCUADRO, 255, 400, 70, 31, 512, "I A S - 1 0 0  T O U C H ", 0)
     DisplayAPI_Button(COLORCUADRO, 255, 20, 350, 175, 90, 31, 512, "IMPRE", tagboton)
     DisplayAPI_Button(COLORCUADRO, 255, 210, 350, 175, 90, 31, 512, "ALARM", tagboton2)
     DisplayAPI_Button(COLORCUADRO, 255, 410, 350, 175, 90, 31, 512, "INHABI", tagboton3)
     DisplayAPI_Button(COLORCUADRO, 255, 610, 350, 175, 90, 31, 512, "CONFIG", tagboton4)
-		'2  Desplegar el icono guardado al inicio en RAM_G
-	mostrar_imagen(3000,3000,0,128)
-	mostrar_imagen(6000,3000,8192,128)
+
+	'2  Desplegar el icono guardado al inicio en RAM_G
+	'mostrar_imagen(4500,2300,0,128)
     ' 4. Finalizar pantalla
     DisplayAPI_EndScreen()
     displayInUse = false
@@ -849,9 +865,11 @@ sub UI_SECOND ()
 	while displayInUse = true
 	wend
 	displayInUse = true
+	
 	DisplayAPI_FONDO(&hff33FF)   	'INICIALIZO PANTALLA Y PONGO FONDO VIOLETA
 	DisplayAPI_WriteText(&hffccff,255,400,70,31,512,"Para volver presione ATRAS",0)
 	DisplayAPI_Button (COLORCUADRO,255,350,250,190,90,31,512,"ATRAS",tagATRAS)
+	
 	DisplayAPI_EndScreen() 			'TERMINO MI PANTALLA 
 	displayInUse = false
 end sub
